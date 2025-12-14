@@ -2,6 +2,8 @@
 
 DetoxDemo is a React Native application demonstrating Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. 
 
+The automation framework was built by T.J. Maher. Detox demo, the app under test, was mostly constructed by GitHub CoPilot via prompts from T.J. Maher.
+
 DetoxDemo is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher taught himself automation development by writing Selenium + Java tests against it.
 
 ## Features

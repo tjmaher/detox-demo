@@ -2,11 +2,13 @@
 
 DetoxDemo is a React Native application demonstrating Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. 
 
-Detox demo, the app under test, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was built by T.J. Maher. 
+Detox demo, the app under test, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. 
 
-DetoxDemo is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher taught himself automation development writing Selenium + Java tests against it back in July 2015 in his Selenium + Java project "Testing The-Internet" ([Blog]([url](https://www.tjmaher.com/p/programming-projects.html))).
+DetoxDemo is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher taught himself automation development writing Selenium + Java tests against it back in July 2015 in his Selenium + Java project "Testing The-Internet" ([Blog](https://www.tjmaher.com/p/programming-projects.html)).
 
-T.J. Maher had been blogging about writing test automation for over ten years on his site, [Adventures in Automation]([url](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)), writing [toy projects]([url](https://www.tjmaher.com/p/programming-projects.html)) to help him practice what he is doing on the job, and writing [articles]([url](https://www.tjmaher.com/p/media.html)) and [courses]([url](https://testautomationu.applitools.com/capybara-ruby/)) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is [@tjmaher1]([url](https://bsky.app/profile/tjmaher1.bsky.social)) on BlueSky. 
+T.J. Maher had been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
+
+If you find this project helpful, feel free to copy it for your own education. 
 
 ## Features
 

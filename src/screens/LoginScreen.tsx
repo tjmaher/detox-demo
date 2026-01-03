@@ -8,6 +8,7 @@ import {
   StatusBar,
   ScrollView,
 } from 'react-native';
+import { CREDENTIALS } from '../../e2e/credentials';
 
 interface LoginScreenProps {
   onNavigateToSecureArea: () => void;
@@ -24,7 +25,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (username === 'tomsmith' && password === 'SuperSecretPassword!') {
+    if (username === CREDENTIALS.USERNAME && password === CREDENTIALS.PASSWORD) {
       setSuccessMessage('Login successful!');
       setTimeout(() => {
         onNavigateToSecureArea();
@@ -113,7 +114,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
         </TouchableOpacity>
       </View>
 
-      {/* Add attribution text at the bottom */}
+      {/* Attribution text */}
       <Text style={styles.attribution}>
         Based on Dave Haefner's{' '}
         <Text style={styles.link}>The-Internet</Text>
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   attribution: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#666',
     textAlign: 'center',
     marginTop: 'auto',

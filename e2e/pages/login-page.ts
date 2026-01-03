@@ -1,6 +1,6 @@
 import { expect, element, by } from 'detox';
 import BasePage from './base-page';
-import { FIVE_SECONDS, TEN_SECONDS } from '../constants';
+import { TEN_SECONDS } from '../constants';
 
 class LoginPage extends BasePage {
   private readonly heading = element(by.id('login-heading'));

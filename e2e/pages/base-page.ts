@@ -1,5 +1,5 @@
 import { expect, element, by, waitFor } from 'detox';
-import { THREE_SECONDS, FIVE_SECONDS } from '../constants';
+import { THREE_SECONDS } from '../constants';
 
 export default abstract class BasePage {
   

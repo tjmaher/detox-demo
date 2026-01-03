@@ -1,8 +1,16 @@
 # Detox Demo - React Native iOS App
 
-DetoxDemo is a React Native application demonstrating Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. 
+DetoxDemo is a React Native application demonstrating Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications.  
 
-DetoxDemo is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher taught himself automation development by writing Selenium + Java tests against it.
+DetoxDemo, the app under test, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. 
+
+DetoxDemo is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher taught himself automation development writing Selenium + Java tests against it back in July 2015 in his project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/p/programming-projects.html)). 
+
+T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 putting together a UI automation framework for their SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. This project was created since T.J. Maher will be blogging about what he has learned and needed a React Mobile app to test against. T.J. will be giving a talk about his experience putting the framework together in April 2026 to Joe Colantonio's [Automation Guild](https://testguild.com/). 
+
+T.J. Maher has been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
+
+If you find this project helpful, feel free to copy it for your own education. 
 
 ## Features
 

@@ -1,0 +1,136 @@
+name: "Build & Test iOS"
+
+permissions:
+  contents: write
+  packages: read
+  id-token: write
+  pages: write 
+  actions: read 
+
+on:
+  # Run all tests when changes are pushed onto the main branch
+  push:
+    branches: [ main ]
+  
+  # Run all tests before being merged to main, when branches are opened or synchronized
+  pull_request:
+    branches: [ main ]
+
+  # Run all tests every day at 10:00 PM EST
+  schedule:
+    - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
+  
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run tests against'
+        required: false
+        default: 'main'
+        type: string
+      test_suite:
+        description: 'Select either all or specific test suite to run'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'login.test.ts'
+          
+
+jobs:
+  ios-regression:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Setup Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Cache Homebrew and RubyGems
+        uses: actions/cache@v3
+        with:
+          path: |
+            /opt/homebrew/Cellar
+            /opt/homebrew/lib
+            ~/.gem
+          key: ${{ runner.os }}-homebrew-gems-${{ hashFiles('**/Gemfile.lock', '**/Brewfile') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-gems-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Applesimutils
+        run: |
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          brew tap wix/brew
+          brew install applesimutils
+
+      - name: Build Detox for iOS
+        run: |
+          npm run e2e:build:ios
+
+      - name: Run Detox tests
+        run: |
+          npm run e2e:test:ios
+
+      - name: Setup Allure
+        if: always()
+        run: |
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+          brew install allure
+
+      - name: Generate Allure report
+        if: always()
+        run: |
+          # Create allure results directory if it doesn't exist
+          mkdir -p allure-results
+          # Generate Allure report
+          allure generate allure-results --clean -o allure-report
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: allure-results
+          path: allure-results/
+
+      - name: Deploy to GitHub Pages
+        if: always() && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: ios-regression-reports
+
+      - name: Clean workspace
+        if: always()
+        run: |
+          # Clean up Detox artifacts
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+          # Clean up simulator data if needed
+          xcrun simctl shutdown all
+          xcrun simctl erase all
+          # Clean npm cache
+          npm cache clean --force
+          # Clean temporary files
+          rm -rf /tmp/detox*

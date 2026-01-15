@@ -8,14 +8,17 @@ permissions:
   actions: read 
 
 on:
+  # Run all tests when changes are pushed onto the main branch
   push:
     branches: [ main ]
+  
+  # Run all tests before being merged to main, when branches are opened or synchronized
   pull_request:
     branches: [ main ]
 
-  # Uncomment below to schedule runs at 10:00 PM EST (3:00 AM UTC)
-  # schedule:
-  #   - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
+  # Run all tests every day at 10:00 PM EST
+  schedule:
+    - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
   
   workflow_dispatch:
     inputs:
@@ -33,12 +36,6 @@ on:
           - 'all'
           - 'login.test.ts'
           
-      # Uncomment below for Slack channel input in the future
-      # slack_channel:
-      #   description: 'Slack channel to send notifications'
-      #   required: false
-      #   default: '#mobile-testing'
-      #   type: string
 
 jobs:
   ios-regression:

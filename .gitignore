@@ -67,10 +67,14 @@ artifacts/
 # Bundle artifacts
 *.jsbundle
 
-# Ruby / CocoaPods
-/ios/Pods/
+# Ruby
 /vendor/bundle/
 ios/.xcode.env.local
+
+# CocoaPods
+ios/Pods/
+!ios/Podfile
+!ios/Podfile.lock
 
 # Temporary files created by Metro
 .metro-health-check*

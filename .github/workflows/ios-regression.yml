@@ -79,6 +79,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          gem install cocoapods
+          pod install --verbose
+        
       - name: Install Applesimutils
         run: |
           eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -86,8 +92,7 @@ jobs:
           brew install applesimutils
 
       - name: Build Detox for iOS
-        run: |
-         yarn detox:build:ios
+        run: yarn detox:build:ios
 
       - name: Run Detox e2e tests
         run: |

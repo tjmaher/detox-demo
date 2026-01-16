@@ -23,6 +23,6 @@ This is a React Native application with Detox end-to-end testing framework for i
 - Follow Detox best practices for element identification and interactions
 
 ## Commands
-- `npm run e2e:build:ios` - Build iOS app for testing
-- `npm run e2e:test:ios` - Run Detox tests on iOS simulator
-- `npm run e2e:ios` - Build and test in one command
+- `yarn detox:build:ios` - Build iOS app for testing
+- `yarn detox:test:ios` - Run Detox tests on iOS simulator
+- `yarn detox:ios` - Build and test in one command

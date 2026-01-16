@@ -87,11 +87,11 @@ jobs:
 
       - name: Build Detox for iOS
         run: |
-          npm run e2e:build:ios
+          yarn detox:build:ios
 
       - name: Run Detox tests
         run: |
-          npm run e2e:test:ios
+          yarn detox:test:ios
 
       - name: Setup Allure
         if: always()

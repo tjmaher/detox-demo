@@ -67,8 +67,8 @@ jobs:
       - name: Setup Node.js for React Native & Detox
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'yarn'  # Change from npm to yarn
+          node-version: '20'
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

@@ -16,14 +16,8 @@ on:
   pull_request:
     branches: [ main ]
 
-  # Run all tests every day at 10:00 PM EST
-<<<<<<< HEAD
-  schedule:
-    - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
-=======
-  # schedule:
+  # Run all tests every day at 10:00 PM EST  # schedule:
   #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
->>>>>>> 7984314 (feat: Add complete Detox Demo React Native testing framework)
   
   workflow_dispatch:
     inputs:
@@ -40,10 +34,7 @@ on:
         options:
           - 'all'
           - 'login.test.ts'
-<<<<<<< HEAD
-=======
           - 'secure-area.test.ts'
->>>>>>> 7984314 (feat: Add complete Detox Demo React Native testing framework)
           
 
 jobs:

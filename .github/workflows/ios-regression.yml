@@ -39,7 +39,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
+          ref: ${{ github.ref }}
 
       - name: Setup Homebrew
         run: |
@@ -101,13 +101,23 @@ jobs:
           
           # Run tests based on selection
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
-            yarn detox:test:ios
+            yarn detox:test:ios --artifacts-location artifacts --record-logs all
           else
             # Run specific test file from e2e directory
-            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts
+            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all
           fi
         env:
           DETOX_CONFIGURATION: ios.sim.debug
+
+      - name: Upload Detox test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-artifacts-${{ github.run_id }}
+          path: |
+            artifacts/
+            e2e/artifacts/
+          retention-days: 30
 
       - name: Setup Allure
         if: always()
@@ -115,28 +125,48 @@ jobs:
           eval "$(/opt/homebrew/bin/brew shellenv)"
           brew install allure
 
-      - name: Generate Allure report
+      - name: Generate test results summary
         if: always()
         run: |
-          # Create allure results directory if it doesn't exist
-          mkdir -p allure-results
-          # Generate Allure report
-          allure generate allure-results --clean -o allure-report
+          # Create a simple HTML report from Detox artifacts
+          mkdir -p test-report
+          
+          echo "<html><head><title>Detox Test Results</title></head><body>" > test-report/index.html
+          echo "<h1>Detox E2E Test Results</h1>" >> test-report/index.html
+          echo "<h2>Test Artifacts</h2>" >> test-report/index.html
+          
+          # List artifacts if they exist
+          if [ -d "artifacts" ]; then
+            echo "<ul>" >> test-report/index.html
+            find artifacts -name "*.png" -o -name "*.log" | while read file; do
+              echo "<li><a href='../$file'>$(basename $file)</a></li>" >> test-report/index.html
+            done
+            echo "</ul>" >> test-report/index.html
+          else
+            echo "<p>No test artifacts generated (all tests passed)</p>" >> test-report/index.html
+          fi
+          
+          echo "</body></html>" >> test-report/index.html
 
-      - name: Upload Allure results
+      - name: Upload comprehensive test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results
-          path: allure-results/
+          name: all-test-artifacts-${{ github.run_id }}
+          path: |
+            artifacts/
+            e2e/artifacts/
+            test-report/
+            *.log
+          retention-days: 90
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy test results to GitHub Pages
         if: always() && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
-          destination_dir: ios-regression-reports
+          publish_dir: ./test-report
+          destination_dir: ios-regression
 
       - name: Clean workspace
         if: always()

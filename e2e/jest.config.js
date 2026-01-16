@@ -8,11 +8,22 @@ module.exports = {
   globalTeardown: 'detox/runners/jest/globalTeardown',
   testEnvironment: 'detox/runners/jest/testEnvironment',
   verbose: true,
-  setupFilesAfterEnv: ['detox/runners/jest/setupAfterEnv'],
   reporters: [
-    'default',
-    ['detox-allure2-adapter/reporter', {
-      outputDir: 'allure-results'
-    }]
-  ]
+    'detox/runners/jest/reporter',
+    ['jest-allure2-reporter', {
+      extends: 'detox-allure2-adapter/preset-allure',
+    }],
+  ],
+  testEnvironmentOptions: {
+    eventListeners: [
+      'jest-metadata/environment-listener',
+      'jest-allure2-reporter/environment-listener',
+      ['detox-allure2-adapter', {
+        deviceLogs: true,
+        deviceScreenshots: true,
+        deviceVideos: true,
+        deviceViewHierarchy: true,
+      }],
+    ],
+  },
 };

@@ -67,8 +67,11 @@ jobs:
       - name: Setup Node.js for React Native & Detox
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'yarn'
+          node-version: '20'  
+          cache: 'yarn'    
+
+      - name: Clean lock file conflicts
+        run: rm -f package-lock.json
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -137,6 +140,7 @@ jobs:
           path: |
             artifacts/
             allure-results/
+            allure-report/
           retention-days: 30
 
       - name: Deploy Allure report to GitHub Pages
@@ -146,6 +150,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
           destination_dir: ios
+          keep_files: true
 
       - name: Clean workspace
         if: always()

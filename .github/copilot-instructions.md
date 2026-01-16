@@ -20,7 +20,6 @@ This is a React Native application with Detox end-to-end testing framework for i
 - All page objects extend BasePage class
 - Test constants are defined in `e2e/constants.ts`
 - Credentials stored in `e2e/credentials.ts`
-- Follow Detox best practices for element identification and interactions
 
 ## Commands
 - `yarn detox:build:ios` - Build iOS app for testing

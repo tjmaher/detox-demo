@@ -32,9 +32,13 @@
     "@types/jest": "^29.5.13",
     "@types/react": "^19.2.0",
     "@types/react-test-renderer": "^19.1.0",
+    "allure-commandline": "^2.36.0",
     "detox": "^20.46.0",
+    "detox-allure2-adapter": "^1.0.0-alpha.35",
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
+    "jest-allure2-reporter": "^2.2.8",
+    "jest-metadata": "^1.6.0",
     "prettier": "2.8.8",
     "react-test-renderer": "19.2.0",
     "typescript": "^5.8.3"

@@ -1,19 +1,18 @@
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
-  preset: 'react-native',
   rootDir: '..',
   testMatch: ['<rootDir>/e2e/**/*.test.ts'],
   testTimeout: 120000,
   maxWorkers: 1,
   globalSetup: 'detox/runners/jest/globalSetup',
   globalTeardown: 'detox/runners/jest/globalTeardown',
-  reporters: ['detox/runners/jest/reporter'],
   testEnvironment: 'detox/runners/jest/testEnvironment',
   verbose: true,
-  transform: {
-    '\\.[jt]sx?$': 'babel-jest',
-  },
-  transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-.*|@react-native-.*)/)'
+  setupFilesAfterEnv: ['detox/runners/jest/setupAfterEnv'],
+  reporters: [
+    'default',
+    ['detox-allure2-adapter/reporter', {
+      outputDir: 'allure-results'
+    }]
   ]
 };

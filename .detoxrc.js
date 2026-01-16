@@ -1,12 +1,19 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
+  extends: "detox-allure2-adapter/preset-detox",
   testRunner: {
     args: {
       '$0': 'jest',
       config: 'e2e/jest.config.js'
     },
     jest: {
-      setupTimeout: 120000,
+      setupFilesAfterEnv: ['detox/runners/jest/setupAfterEnv'],
+      reporters: [
+        'default',
+        ['detox-allure2-adapter/reporter', {
+          outputDir: 'allure-results'
+        }]
+      ]
     }
   },
   apps: {
@@ -20,7 +27,7 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone 16 Pro'
+        type: 'iPhone 15'
       }
     }
   },

@@ -120,7 +120,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
-          destination_dir: ios-regression-reports
+          destination_dir: ios
 
       - name: Clean workspace
         if: always()

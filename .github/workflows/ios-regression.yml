@@ -21,11 +21,6 @@ on:
   
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to run tests against'
-        required: false
-        default: 'main'
-        type: string
       test_suite:
         description: 'Select either all or specific test suite to run'
         required: true
@@ -34,8 +29,7 @@ on:
         options:
           - 'all'
           - 'login.test.ts'
-          - 'secure-area.test.ts'
-          
+          - 'secure-area.test.ts'          
 
 jobs:
   ios-regression:

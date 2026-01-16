@@ -2,6 +2,7 @@
   "name": "detox-demo",
   "version": "0.0.1",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "ios:dev": "react-native run-ios",
     "lint": "eslint .",

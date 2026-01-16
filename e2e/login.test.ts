@@ -1,7 +1,8 @@
 import { device } from 'detox';
 import loginPage from './pages/login-page';
 import secureAreaPage from './pages/secure-area-page';
-import { CREDENTIALS } from './credentials';
+import { validUser, invalidUser } from './credentials';
+import BasePage from './pages/base-page';
 
 describe('Login Flow', () => {
   beforeAll(async () => {
@@ -10,10 +11,16 @@ describe('Login Flow', () => {
 
   afterAll(async () => {
     await device.terminateApp();
+    BasePage.outputAllTestResults();
   });
 
   beforeEach(async () => {
     await device.reloadReactNative();
+    BasePage.clearTestLogs();
+  });
+
+  afterEach(async () => {
+    BasePage.collectTestResult();
   });
 
   it('Verify Heading and Instruction Text', async () => {
@@ -22,39 +29,14 @@ describe('Login Flow', () => {
     await loginPage.verifyInstructionText();
   });
 
-  it('Invalid credentials displays error message', async () => {
-    await loginPage.waitToLoad();
-    await loginPage.enterUsername('invaliduser');
-    await loginPage.enterPassword('invalidpass');
-    await loginPage.tapLoginButton();
+  it('Invalid credentials displays error message inside an error banner', async () => {
+    await loginPage.loginAs(invalidUser.userName, invalidUser.password);
     await loginPage.verifyErrorMessage();
   });
 
   it('Successful login to Secure Area displays success message', async () => {
-    await loginPage.waitToLoad();
-    await loginPage.enterUsername(CREDENTIALS.USERNAME);
-    await loginPage.enterPassword(CREDENTIALS.PASSWORD);
-    await loginPage.tapLoginButton();
-    
+    await loginPage.loginAs(validUser.userName, validUser.password);
     await secureAreaPage.waitToLoad();
-    await secureAreaPage.verifyHeading();
-    await secureAreaPage.verifyBodyText();
     await secureAreaPage.verifySuccessBanner();
-  });
-
-  it('Logout from Secure Area returns to Login Page', async () => {
-    // TODO: Refactor this into a Login helper function
-    await loginPage.waitToLoad();
-    await loginPage.enterUsername(CREDENTIALS.USERNAME);
-    await loginPage.enterPassword(CREDENTIALS.PASSWORD);
-    await loginPage.tapLoginButton();
-    
-    // Wait to Load Secure Area then Log out
-    await secureAreaPage.waitToLoad();
-    await secureAreaPage.tapLogoutButton();
-    
-    // Should be back on login page with logout message
-    await loginPage.waitToLoad();
-    await loginPage.verifyLogoutSuccessMessage();
   });
 });

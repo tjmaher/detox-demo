@@ -1,8 +1,14 @@
 # OSX
 #
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Xcode
+# XCODE
 #
 build/
 *.pbxuser
@@ -20,7 +26,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
-**/.xcode.env.local
+project.xcworkspace
 
 # Android/IntelliJ
 #
@@ -33,7 +39,6 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
-.kotlin/
 
 # node.js
 #
@@ -48,28 +53,24 @@ yarn-error.log
 # For more information about the recommended setup visit:
 # https://docs.fastlane.tools/best-practices/source-control/
 
-**/fastlane/report.xml
-**/fastlane/Preview.html
-**/fastlane/screenshots
-**/fastlane/test_output
 
-# Bundle artifact
+# React Native
+#
+.expo/
+web-build/
+dist/
+
+# Detox
+e2e/artifacts/
+artifacts/
+
+# Bundle artifacts
 *.jsbundle
 
 # Ruby / CocoaPods
-**/Pods/
+/ios/Pods/
 /vendor/bundle/
+ios/.xcode.env.local
 
-# Temporary files created by Metro to check the health of the file watcher
+# Temporary files created by Metro
 .metro-health-check*
-
-# testing
-/coverage
-
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions

@@ -8,7 +8,7 @@ import {
   StatusBar,
   ScrollView,
 } from 'react-native';
-import { CREDENTIALS } from '../../e2e/credentials';
+import { validUser } from '../../e2e/credentials';
 
 interface LoginScreenProps {
   onNavigateToSecureArea: () => void;
@@ -25,7 +25,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (username === CREDENTIALS.USERNAME && password === CREDENTIALS.PASSWORD) {
+    if (username === validUser.userName && password === validUser.password) {
       setSuccessMessage('Login successful!');
       setTimeout(() => {
         onNavigateToSecureArea();
@@ -51,14 +51,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
       {/* Logout Success Banner */}
       {showLogoutMessage ? (
         <View style={styles.successBanner} testID="success-banner">
-          <Text style={styles.bannerText}>You logged out of the secure area!</Text>
+          <Text testID="success-logout-text" style={styles.bannerText}>You logged out of the secure area!</Text>
         </View>
       ) : null}
 
       {/* Error Banner */}
       {errorMessage ? (
         <View style={styles.errorBanner} testID="error-banner">
-          <Text style={styles.bannerText}>{errorMessage}</Text>
+          <Text style={styles.bannerText} testID="error-text">{errorMessage}</Text>
         </View>
       ) : null}
       

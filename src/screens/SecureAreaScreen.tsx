@@ -29,7 +29,7 @@ const SecureAreaScreen: React.FC<SecureAreaScreenProps> = ({ onLogout }) => {
       
       {/* Success Banner */}
       <View style={styles.successBanner} testID="success-banner">
-        <Text style={styles.bannerText}>{successMessage}</Text>
+        <Text testID="success-text" style={styles.bannerText}>{successMessage}</Text>
       </View>
 
       <View style={styles.formContainer}>

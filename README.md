@@ -116,9 +116,39 @@ bundle exec pod install
 
 For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
 
-```sh
-yarn ios
+How to run tests:
+
+Run all the tests: 
+* detox test --configuration ios.sim.debug
+
+Run only the LoginPage tests in login.test.ts: 
+* detox test --configuration ios.sim.debug e2e/login.test.ts
+
+... Or you can run shortcuts to run the tests, found in the package.json file in the root directory:
+ 
+ ```sh
+ "detox:build:ios": "detox build --configuration ios.sim.debug",
+ "detox:test:ios": "detox test --configuration ios.sim.debug",
+ "detox:ios": "yarn run detox:build:ios && yarn run detox:test:ios"
 ```
+
+To run one of the shortcuts, add the command "yarn" plus the shortcut:
+* Run all the tests on an iOS elmulator in debug mode: yarn detox:test:ios
+
+Detox has a REPL mode, a Run - Evaluate - Print Loop where you can investigate your running app. For more information, see [Wix Detox: Debugging with Detox REPL](https://wix.github.io/Detox/docs/guide/detox-repl)
+
+Let's say you wanted to run all failing LoginPage tests in REPL mode:
+* detox test --configuration ios.sim.debug e2e/login.test.ts --repl=auto
+
+Some things you can do in REPL Mode:
+```
+.detox> .help
+.break     Sometimes you get stuck, this gets you out
+.dumpxml   Print view hierarchy XML
+.exit      Exit the REPL
+.help      Print this help message
+```
+
 
 You should see your new app running in iOS Simulator.
 

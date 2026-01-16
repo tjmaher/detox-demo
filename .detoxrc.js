@@ -7,7 +7,6 @@ module.exports = {
       config: 'e2e/jest.config.js'
     },
     jest: {
-      setupFilesAfterEnv: ['detox/runners/jest/setupAfterEnv'],
       reporters: [
         'default',
         ['detox-allure2-adapter/reporter', {

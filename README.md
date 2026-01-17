@@ -47,33 +47,43 @@ If you find this project helpful, feel free to copy it for your own education.
 ## Project Structure
 
 ```
-src/
-├── screens/
-│   ├── LoginScreen.tsx       # Main login interface
-│   └── SecureAreaScreen.tsx  # Secure area after login
-
-e2e/
-├── pages/
-│   ├── base-page.ts          # Base page object with common methods
-│   ├── login-page.ts         # Login screen page object  
-│   └── secure-area-page.ts   # Secure area page object
-├── constants.ts              # Time constants (TEN_SECONDS, etc.)
-├── credentials.ts            # Test credentials (tomsmith/SuperSecretPassword!)
-├── init.ts                   # Detox initialization
-├── jest.config.js           # Jest configuration for Detox tests
-├── login.test.ts            # Login functionality test suite
-└── securearea.test.ts       # Secure area test suite
-
-.github/
-└── workflows/
-    └── ios-regression.yml    # GitHub Actions CI/CD pipeline
-
-ios/                          # iOS native project files
-android/                      # Android native project files (if applicable)
-
-.detoxrc.js                  # Detox configuration with iPhone 16 Pro
-jest.config.js               # React Native unit tests configuration
-package.json                 # Dependencies and scripts
+detox-demo/
+├── src/
+│   └── screens/
+│       ├── LoginScreen.tsx       # Login Page emulating The-Internet
+│       └── SecureAreaScreen.tsx  # Secure Area reached after successful login
+│
+├── e2e/                          # Detox end-to-end testing framework
+│   ├── pages/                    # Page Objects
+│   │   ├── base-page.ts          # Base page object with common methods
+│   │   ├── login-page.ts         # Login screen page object
+│   │   └── secure-area-page.ts   # Secure area page object
+│   ├── constants.ts              # Time constants (TEN_SECONDS, FIVE_SECONDS, etc.)
+│   ├── credentials.ts            # Test credentials (tomsmith/SuperSecretPassword!)
+│   ├── init.ts                   # Detox initialization and setup
+│   ├── jest.config.js            # Jest configuration for Detox tests with Allure integration
+│   ├── login.test.ts             # Login functionality test suite
+│   └── securearea.test.ts        # Secure area test suite
+│
+├── .github/
+│   └── workflows/
+│       └── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
+│
+├── ios/                          # iOS native project files and Xcode configuration
+│   └── DetoxDemo/
+│       └── Images.xcassets/
+│           └── AppIcon.appiconset/ # Custom app icons
+│
+├── scripts/
+│   └── generate-tj-icon.js       # Icon generation script 
+│
+├── assets/                       # Static assets and resources
+│   └── app-icon.svg              # SVG source for app icon generation
+│
+├── .detoxrc.js                  # Detox configuration targeting iPhone 16 Pro simulator
+├── jest.config.js               # React Native unit tests configuration
+├── package.json                 # Dependencies and yarn scripts for detox:ios commands
+└── README.md                    
 ```
 
 ## Setup & Installation

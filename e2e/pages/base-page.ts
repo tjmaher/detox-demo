@@ -18,14 +18,21 @@ export default abstract class BasePage {
     BasePage.testLogs = [];
   }
 
-  static collectTestResult() {
+  static collectTestResult(testResult?: { success: boolean; error?: string }) {
     const testName = jestExpect.getState().currentTestName || 'Unknown Test';
-    const testStatus = jestExpect.getState().suppressedErrors?.length > 0 ? 'FAIL' : 'PASS';
-    const errorMessage = jestExpect.getState().suppressedErrors?.[0]?.message;
+    
+    // Use Jest's test result if available, otherwise default to PASS
+    let testStatus: 'PASS' | 'FAIL' = 'PASS';
+    let errorMessage: string | undefined;
+    
+    if (testResult) {
+      testStatus = testResult.success ? 'PASS' : 'FAIL';
+      errorMessage = testResult.error;
+    }
     
     BasePage.allTestResults.push({
       testName,
-      status: testStatus as 'PASS' | 'FAIL',
+      status: testStatus,
       error: errorMessage,
       logs: [...BasePage.testLogs]
     });

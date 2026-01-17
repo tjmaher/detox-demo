@@ -78,3 +78,4 @@ ios/Pods/
 
 # Temporary files created by Metro
 .metro-health-check*
+package-lock.json

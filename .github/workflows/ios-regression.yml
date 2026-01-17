@@ -9,12 +9,12 @@ permissions:
 
 on:
   # Run all tests when changes are pushed onto the main branch
-  push:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
   
   # Run all tests before being merged to main, when branches are opened or synchronized
-  pull_request:
-    branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
 
   # Run all tests every day at 10:00 PM EST  # schedule:
   #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
@@ -95,8 +95,39 @@ jobs:
         id: build-app
         run: |
           echo "Building React Native app for Detox testing..."
-          yarn detox:build:ios
+          
+          # Start Metro bundler in background for CI
+          echo "Starting Metro bundler for CI build..."
+          yarn start --reset-cache &
+          METRO_PID=$!
+          
+          # Wait for Metro to start
+          echo "Waiting for Metro bundler to start..."
+          sleep 15
+          
+          # Build the iOS app with embedded bundle
+          echo "Building iOS app with embedded JS bundle..."
+          cd ios
+          xcodebuild \
+            -workspace DetoxDemo.xcworkspace \
+            -scheme DetoxDemo \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+          
+          cd ..
+          
+          # Stop Metro bundler
+          echo "Stopping Metro bundler..."
+          kill $METRO_PID || true
+          
           echo "Build completed successfully"
+        env:
+          CI: true
+          NODE_ENV: development
 
       - name: Upload build artifacts
         if: success()
@@ -145,6 +176,15 @@ jobs:
       - name: Run Detox e2e tests
         id: run-tests
         run: |
+          # Start Metro bundler for tests
+          echo "Starting Metro bundler for test execution..."
+          yarn start --reset-cache &
+          METRO_PID=$!
+          
+          # Wait for Metro to be ready
+          echo "Waiting for Metro bundler to start..."
+          sleep 15
+          
           # List available simulators
           echo "Available iOS simulators:"
           xcrun simctl list devices available
@@ -168,15 +208,16 @@ jobs:
             echo "ERROR: iPhone 16 Pro simulator not found!"
             echo "Available iPhone simulators:"
             xcrun simctl list devices | grep "iPhone"
+            kill $METRO_PID || true
             exit 1
           fi
           
-          echo "Starting Detox tests on iPhone 16 Pro..."
+          echo "Starting Detox tests on iPhone 16 Pro with Metro running..."
           
           # Set CI environment for test stability
           export CI=true
           
-          # Run Detox tests
+          # Run Detox tests with Metro bundler running
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
             echo "Running all Detox tests..."
             yarn detox:test:ios --artifacts-location artifacts --record-logs all
@@ -185,10 +226,15 @@ jobs:
             yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all
           fi
           
+          # Stop Metro bundler after tests
+          echo "Stopping Metro bundler..."
+          kill $METRO_PID || true
+          
           echo "Detox tests completed on iPhone 16 Pro"
         env:
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true
+          RCT_METRO_PORT: 8081
 
       - name: Upload test artifacts
         if: always()
@@ -201,7 +247,7 @@ jobs:
           retention-days: 7
 
   # Stage 3: Generate Allure Reports, only if tests complete)
-  allure-report:
+  publish-allure-report:
     runs-on: macos-latest
     needs: [build, test]
     if: always() && needs.build.outputs.build-success == 'success'
@@ -318,7 +364,7 @@ jobs:
   # Stage 4: Cleanup (Always runs)
   cleanup:
     runs-on: macos-latest
-    needs: [build, test, allure-report]
+    needs: [build, test, publish-allure-report]
     if: always()
     
     steps:

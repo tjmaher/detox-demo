@@ -145,24 +145,6 @@ yarn detox:ios
 
 You should see your app running in iOS Simulator with tests.
 
-## GitHub Actions CI/CD Pipeline
-
-The `ios-regression.yml` workflow provides automated testing with a multi-stage pipeline:
-
-### Pipeline Stages
-1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for iPhone 16 Pro simulator
-2. **Test Stage**: Boots iPhone 16 Pro simulator running Detox tests collecting artifacts such as screenshots, videos, logs
-3. **Allure Report Stage**: Generates HTML test reports, deploying to GitHub Pages at https://tjmaher.github.io/detox-demo/ios/
-4. **Cleanup Stage**: Removes temporary files and shuts down simulators
-
-### Key Features
-- **Triggered on**: Push to main, pull requests, manual dispatch with test suite selection
-- **iPhone 16 Pro Focus**: Uses iPhone 16 Pro simulator
-- **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
-- **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
-- **Live Reports**: Publishes test results to GitHub Pages for easy access
-
-
 # Getting Started
 
 [Set Up Your React Native Environment](https://reactnative.dev/docs/set-up-your-environment) before proceeding.
@@ -195,7 +177,7 @@ bundle install
 
 For more information, visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
 
-### Step 3: Run the Tests
+## Step 3: Run the Tests Locally
 
 How to run tests:
 
@@ -245,6 +227,37 @@ You should see your new app running in iOS Simulator.
     Snapshots:   0 total
     Time:        27.516 s, estimated 39 s
   ```  
+# Test Branch Code with GitHub Actions as a CI/ CD platform
+
+Let's say a developer wants to know if the changes they made cause a regression, i.e. break what was once fixed, regressing the product to a more broken state BEFORE their changes are moved into the main branch... They can use a GitHub Actions workflow set up to run on an iPhone 16 Pro emulator. 
+
+**GitHub Actions** is GitHub's built-in CI/CD (Continuous Integration/Continuous Deployment) platform that automates your software development workflows directly within your GitHub repository.
+
+The `ios-regression.yml` workflow provides automated testing with a multi-stage pipeline.
+
+## How to Kick off Tests
+
+* Go to the [Build & Test Nightly iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) workflow in GitHub Actions. 
+* Click on "Run workflow". 
+* Under "Use workflow from:" dropdown, you can select your branch you want to test against. 
+* Which tests do you want to run? The default "all"? Or was there a particular test scenario you wanted? 
+* That is the last choice you need to make. Hit "Run Workflow"
+
+It takes 30 minutes to build the Detox app and 30 minutes to set up the simulator run all tests. 
+
+### Pipeline Stages
+1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for iPhone 16 Pro simulator
+2. **Test Stage**: Boots iPhone 16 Pro simulator running Detox tests collecting artifacts such as screenshots, videos, logs
+3. **Allure Report Stage**: Generates HTML test reports, deploying to GitHub Pages at https://tjmaher.github.io/detox-demo/ios/
+4. **Cleanup Stage**: Removes temporary files and shuts down simulators
+
+### Key Features
+- **Triggered on**: Push to main, pull requests, manual dispatch with test suite selection
+- **iPhone 16 Pro Focus**: Uses iPhone 16 Pro simulator
+- **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
+- **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
+- **Live Reports**: Publishes test results to GitHub Pages for easy access
+
 
 # Troubleshooting
 

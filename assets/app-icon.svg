@@ -1,0 +1,14 @@
+<!-- filepath: /Users/tj/src/detox-demo/assets/app-icon.svg -->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blue background -->
+  <rect width="1024" height="1024" rx="180" fill="#007AFF"/>
+  
+  <!-- "T.J." text in white -->
+  <text x="512" y="600" font-family="SF Pro Display, system-ui" font-size="300" 
+        font-weight="700" fill="white" text-anchor="middle" letter-spacing="20">T.J.</text>
+  
+  <!-- Small Detox testing checkmark -->
+  <circle cx="850" cy="850" r="80" fill="#34C759" stroke="white" stroke-width="4"/>
+  <path d="M 820 850 L 840 870 L 880 830" stroke="white" stroke-width="12" 
+        fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

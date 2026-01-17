@@ -145,22 +145,50 @@ jobs:
       - name: Run Detox e2e tests
         id: run-tests
         run: |
-          # Ensure simulator is available
+          # List available simulators
+          echo "Available iOS simulators:"
           xcrun simctl list devices available
           
-          echo "Starting Detox tests..."
+          # Find and boot iPhone 16 Pro simulator explicitly
+          echo "Looking for iPhone 16 Pro simulator..."
+          SIMULATOR_ID=$(xcrun simctl list devices | grep "iPhone 16 Pro" | grep -v "Max" | head -1 | grep -o '[A-Z0-9-]\{36\}')
           
+          if [ ! -z "$SIMULATOR_ID" ]; then
+            echo "Found iPhone 16 Pro simulator: $SIMULATOR_ID"
+            echo "Booting iPhone 16 Pro..."
+            xcrun simctl boot "$SIMULATOR_ID" || echo "Simulator already booted"
+            
+            # Wait for simulator to fully boot
+            echo "Waiting for simulator to boot completely..."
+            sleep 10
+            
+            # Verify simulator is booted
+            xcrun simctl list devices | grep "$SIMULATOR_ID"
+          else
+            echo "ERROR: iPhone 16 Pro simulator not found!"
+            echo "Available iPhone simulators:"
+            xcrun simctl list devices | grep "iPhone"
+            exit 1
+          fi
+          
+          echo "Starting Detox tests on iPhone 16 Pro..."
+          
+          # Set CI environment for test stability
+          export CI=true
+          
+          # Run Detox tests
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
-            echo "Running tests..."
+            echo "Running all Detox tests..."
             yarn detox:test:ios --artifacts-location artifacts --record-logs all
           else
             echo "Running specific test: ${{ github.event.inputs.test_suite }}"
             yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all
           fi
           
-          echo "Detox tests completed"
+          echo "Detox tests completed on iPhone 16 Pro"
         env:
           DETOX_CONFIGURATION: ios.sim.debug
+          CI: true
 
       - name: Upload test artifacts
         if: always()

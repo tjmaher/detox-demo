@@ -3,7 +3,7 @@ import BasePage from './base-page';
 import { TEN_SECONDS } from '../constants';
 
 class LoginPage extends BasePage {
-  private readonly heading = by.id('login-heading');
+  private readonly heading = by.text('Login Page');
   private readonly instructionText = by.id('login-instructions');
   private readonly usernameInput = by.id('username-input');
   private readonly passwordInput = by.id('password-input');

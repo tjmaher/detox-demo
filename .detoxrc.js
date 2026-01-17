@@ -35,5 +35,14 @@ module.exports = {
       device: 'simulator',
       app: 'ios.debug'
     }
+  },
+  artifacts: {
+    plugins: {
+      screenshot: 'failing',
+      video: 'failing', 
+      instruments: 'none',
+      log: 'failing',
+      uiHierarchy: 'failing'
+    }
   }
 };

@@ -276,3 +276,43 @@ allure open allure-report
 View live reports at https://tjmaher.github.io/detox-demo/ios/
 
 The GitHub Actions workflow automatically runs tests, captures failure artifacts, and publishes reports to GitHub Pages for easy access to test results and debugging
+
+## What is Metro?
+
+**Metro** is the JavaScript bundler for React Native applications, the build tool that transforms React Native code into JavaScript bundles that can run on iOS and Android devices.
+
+### Key Functions in DetoxDemo
+
+**Development Server**: Metro runs a local development server on port 8081, that serves your JavaScript code to the iOS Simulator during development and testing.
+
+**Code Transformation**: Converts modern JavaScript/TypeScript, JSX, and React Native components into optimized JavaScript that iOS can execute.
+
+**Hot Reloading**: Enables fast development by automatically updating your app when you make code changes without losing app state.
+
+**Bundle Generation**: Creates production-ready JavaScript bundles for release builds.
+
+### Metro in Your Detox Tests
+
+When running Detox tests, Metro must be running to serve your app's JavaScript code to the iOS Simulator:
+
+```bash
+# Metro starts automatically with this command
+yarn start
+
+# Or start with cache reset for clean testing
+yarn start --reset-cache
+```
+
+### Common Metro Issues
+
+**"No script URL provided"**: This error occurs when:
+- Metro bundler isn't running during test execution
+- iOS app can't connect to Metro server
+- JavaScript bundle isn't embedded in the app for CI
+
+**Port Conflicts**: Metro defaults to port 8081. If blocked:
+```bash
+# Start Metro on different port
+yarn start --port 8082
+```
+

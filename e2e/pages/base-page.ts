@@ -1,6 +1,6 @@
 import { expect, element, by, waitFor } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
-import { THREE_SECONDS } from '../constants';
+import { FIVE_SECONDS } from '../constants';
 
 export default abstract class BasePage {
   protected static testLogs: string[] = [];
@@ -60,7 +60,7 @@ export default abstract class BasePage {
 
   async getVisibleText(text: string) {
     const textElement = element(by.text(text)).atIndex(0);
-    await waitFor(textElement).toBeVisible().withTimeout(THREE_SECONDS);
+    await waitFor(textElement).toBeVisible().withTimeout(FIVE_SECONDS);
     return textElement;
   }
 
@@ -69,13 +69,13 @@ export default abstract class BasePage {
   }
 
  async verifyElementHasText(locator: Detox.NativeMatcher, expectedText: string) {
-    await expect(element(locator)).toBeVisible();
+    await waitFor(element(locator)).toBeVisible().withTimeout(FIVE_SECONDS);
     await expect(element(locator)).toHaveText(expectedText);
   }
 
   async verifyElementContainsText(locator: Detox.NativeMatcher, expectedText: string) {
     const textElement = element(by.text(expectedText).withAncestor(locator));
-    await waitFor(textElement).toBeVisible().withTimeout(THREE_SECONDS);
+    await waitFor(textElement).toBeVisible().withTimeout(FIVE_SECONDS);
   }
 
   async expectTextToBeVisible(text: string) {

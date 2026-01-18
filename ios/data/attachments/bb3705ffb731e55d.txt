@@ -1,0 +1,3 @@
+DEBUG	com.wix.Detox:WebSocket	Action received: loginSuccess
+DEBUG	com.wix.Detox:DetoxManager	Successfully logged in
+DEBUG	com.wix.Detox:WebSocket	Action received: currentStatus

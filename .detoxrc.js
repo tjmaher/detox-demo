@@ -11,20 +11,17 @@ module.exports = {
       uiHierarchy: 'failing',
     }
   },
+  
   testRunner: {
     args: {
       '$0': 'jest',
       config: 'e2e/jest.config.js'
     },
     jest: {
-      reporters: [
-        'default',
-        ['detox-allure2-adapter/reporter', {
-          outputDir: 'allure-results'
-        }]
-      ]
+      setupFilesAfterEnv: ['./e2e/init.ts']
     }
   },
+  
   apps: {
     'ios.debug': {
       type: 'ios.app',
@@ -32,6 +29,7 @@ module.exports = {
       build: 'xcodebuild -workspace ios/DetoxDemo.xcworkspace -scheme DetoxDemo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build'
     }
   },
+  
   devices: {
     simulator: {
       type: 'ios.simulator',
@@ -40,6 +38,7 @@ module.exports = {
       }
     }
   },
+  
   configurations: {
     'ios.sim.debug': {
       device: 'simulator',

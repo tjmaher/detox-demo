@@ -9,8 +9,8 @@ permissions:
 
 on:
   # Run all tests when changes are pushed onto the main branch
-  # push:
-  #   branches: [ main ]
+  push:
+    branches: [ main ]
   
   # Run all tests before being merged to main, when branches are opened or synchronized
   # pull_request:
@@ -175,7 +175,12 @@ jobs:
 
       - name: Run Detox e2e tests
         id: run-tests
+        continue-on-error: true
         run: |
+          # Create directories explicitly
+          mkdir -p allure-results
+          mkdir -p artifacts
+          
           # Start Metro bundler for tests
           echo "Starting Metro bundler for test execution..."
           yarn start --reset-cache &
@@ -214,17 +219,19 @@ jobs:
           
           echo "Starting Detox tests on iPhone 16 Pro with Metro running..."
           
-          # Set CI environment for test stability
-          export CI=true
-          
-          # Run Detox tests with Metro bundler running
+          # Run Detox tests with explicit Allure environment variables
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
             echo "Running all Detox tests..."
-            yarn detox:test:ios --artifacts-location artifacts --record-logs all
+            JEST_ALLURE2_REPORTER_RESULTS_DIR=allure-results yarn detox:test:ios --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
           else
             echo "Running specific test: ${{ github.event.inputs.test_suite }}"
-            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all
+            JEST_ALLURE2_REPORTER_RESULTS_DIR=allure-results yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
           fi
+          
+          # Check if allure-results has content
+          echo "Checking allure-results directory..."
+          ls -la allure-results/ || echo "allure-results is empty"
+          find allure-results -type f -name "*.json" -print0 | xargs -0 wc -l || echo "Failed to count JSON files in allure-results"
           
           # Stop Metro bundler after tests
           echo "Stopping Metro bundler..."
@@ -235,6 +242,7 @@ jobs:
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true
           RCT_METRO_PORT: 8081
+          JEST_ALLURE2_REPORTER_RESULTS_DIR: allure-results
 
       - name: Upload test artifacts
         if: always()

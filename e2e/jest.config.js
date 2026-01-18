@@ -14,10 +14,14 @@ module.exports = {
     [
       'jest-allure2-reporter',
       {
-        extends: 'detox-allure2-adapter/preset-allure',
         resultsDir: 'allure-results',
         testCaseNameTemplate: '{ancestorTitles} {title}',
         suiteNameTemplate: '{filepath}',
+        overwrite: false,
+        attachments: true,
+        // Critical: Add these to ensure proper Allure integration
+        testCasePropertiesMode: 'merge',
+        attachmentsBaseURL: 'attached://'
       },
     ],
   ],
@@ -30,6 +34,8 @@ module.exports = {
         'detox-allure2-adapter',
         {
           enabled: true,
+          // Add explicit configuration
+          attachmentsSubDir: 'attachments',
         },
       ],
     ],

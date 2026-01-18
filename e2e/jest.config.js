@@ -1,7 +1,10 @@
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   rootDir: '..',
-  testMatch: ['<rootDir>/e2e/**/*.test.ts'],
+  testMatch: [
+    '<rootDir>/e2e/login.test.ts',      // Run login first
+    '<rootDir>/e2e/securearea.test.ts', // Then secure area
+  ],
   testTimeout: 120000,
   maxWorkers: 1,
   globalSetup: 'detox/runners/jest/globalSetup',

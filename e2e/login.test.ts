@@ -7,10 +7,10 @@ import BasePage from './pages/base-page';
 describe('Login Flow', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
+    await loginPage.waitToLoad();
   });
 
   afterAll(async () => {
-    await device.terminateApp();
     BasePage.outputAllTestResults();
   });
 

@@ -7,6 +7,7 @@ import BasePage from './pages/base-page';
 describe('Secure Area Flow', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
+    await loginPage.waitToLoad();
   });
 
   afterAll(async () => {

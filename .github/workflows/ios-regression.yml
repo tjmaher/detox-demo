@@ -130,7 +130,7 @@ jobs:
             node_modules/.bin/detox
           retention-days: 1
 
-  # Stage 2: Run Tests, if build succeeds)
+  # Stage 2: Run Tests, if build succeeds
   test:
     runs-on: macos-latest
     needs: build
@@ -213,10 +213,10 @@ jobs:
           # Run Detox tests
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
             echo "Running all Detox tests..."
-            yarn detox:test:ios --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
+            yarn detox:test:ios || echo "Tests completed with failures"
           else
             echo "Running specific test: ${{ github.event.inputs.test_suite }}"
-            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
+            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug || echo "Tests completed with failures"
           fi
           
           # Check if allure-results has content

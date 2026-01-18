@@ -1,0 +1,4 @@
+ERROR		fastapps timed out waiting for clips 1 after 61.084108s
+ERROR		*** Assertion failure (Identifier: catch-all) : -[FCKeyValueStore _save] FCKeyValueStore.m:649 failed to serialize app-config key-value store plist with error: Error Domain=NSCocoaErrorDomain Code=3851 "Property list invalid for format: 200 (property lists cannot contain objects of type 'CFNull')" UserInfo={NSDebugDescription=Property list invalid for format: 200 (property lists cannot contain objects of type 'CFNull')}
+ERROR		fastapps timed out waiting for clips 2 after 121.198333s
+ERROR		fastapps timed out waiting for clips 1 after 60.283208s

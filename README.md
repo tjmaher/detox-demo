@@ -2,7 +2,9 @@
 
 DetoxDemo is a React Native demo app that T.J. Maher will be using to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
 
-DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. Reports are produced via [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter). CI/CD Test reports produced by a GitHub Actions workflow are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
+The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. first started teaching himself automation development, writing Selenium + Java tests against that website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
+
+<div align="center">
 
 <table>
 <tr>
@@ -23,9 +25,11 @@ DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-en
 </tr>
 </table>
 
-DetoxDemo, the app under test for this project, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
+</div>
 
-The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher first started teaching himself automation development, writing Selenium + Java tests against the website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
+DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. Reports are produced via [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter). CI/CD Test reports produced by a GitHub Actions workflow are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
+
+DetoxDemo, the app under test for this project, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
 
 T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 testing the SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. 
 

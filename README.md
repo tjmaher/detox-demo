@@ -6,14 +6,14 @@ DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-en
 
 <table>
 <tr>
-<td width="50%" style="padding-right: 10px;">
+<td width="50%" style="padding: 10px;">
 
 <img src="docs/images/login-page.png" alt="Login Screen" width="300">
 
 *Login Page*
 
 </td>
-<td width="50%" style="padding-left: 10px;">
+<td width="50%" style="padding: 10px;">
 
 <img src="docs/images/secure-area.png" alt="Secure Area Screen" width="300">
 

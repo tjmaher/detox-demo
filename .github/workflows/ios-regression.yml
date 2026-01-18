@@ -96,16 +96,11 @@ jobs:
         run: |
           echo "Building React Native app for Detox testing..."
           
-          # Start Metro bundler in background for CI
-          echo "Starting Metro bundler for CI build..."
-          yarn start --reset-cache &
-          METRO_PID=$!
+          # List available simulators for debugging
+          echo "Available iOS simulators:"
+          xcrun simctl list devices available | grep "iPhone"
           
-          # Wait for Metro to start
-          echo "Waiting for Metro bundler to start..."
-          sleep 15
-          
-          # Build the iOS app with embedded bundle
+          # Build the iOS app without Metro (React Native handles bundling)
           echo "Building iOS app with embedded JS bundle..."
           cd ios
           xcodebuild \
@@ -116,13 +111,9 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest'
           
           cd ..
-          
-          # Stop Metro bundler
-          echo "Stopping Metro bundler..."
-          kill $METRO_PID || true
           
           echo "Build completed successfully"
         env:

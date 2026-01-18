@@ -1,58 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html dir="ltr" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detox Demo Project - Test Results</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 40px; background: #f5f7fa; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
-        .status { padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .warning { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
-        .info { background: #d1ecf1; border-left: 4px solid #17a2b8; color: #0c5460; }
-        .command { background: #f8f9fa; padding: 15px; border-radius: 6px; font-family: 'Monaco', monospace; margin: 10px 0; }
-        ul { line-height: 1.6; }
-        .footer { text-align: center; color: #6c757d; margin-top: 30px; font-size: 0.9em; }
-    </style>
+    <meta charset="utf-8">
+    <title>Allure Report</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="plugin/screen-diff/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>🧪 Detox Demo Project - Test Results</h1>
-        
-        <div class="status warning">
-            <h3>⚠️ No Test Results Available</h3>
-            <p>The Detox tests for login functionality simulation did not generate Allure-compatible results.</p>
-        </div>
-        
-        <div class="info">
-            <h3>📋 Expected Test Coverage:</h3>
-            <ul>
-                <li><strong>Login Page</strong> - Username/password input validation</li>
-                <li><strong>Secure Area</strong> - Success banner verification</li>
-                <li><strong>Error Handling</strong> - Invalid credentials testing</li>
-                <li><strong>Navigation Flow</strong> - Login to secure area transitions</li>
-            </ul>
-        </div>
-        
-        <h3>🔧 Local Testing Commands:</h3>
-        <div class="command">yarn detox:build:ios</div>
-        <div class="command">yarn detox:test:ios</div>
-        <div class="command">yarn detox:ios</div>
-        
-        <h3>📁 Test Structure:</h3>
-        <ul>
-            <li><code>e2e/pages/base-page.ts</code> - Base Page class</li>
-            <li><code>e2e/pages/login-page.ts</code> - Login screen interactions</li>
-            <li><code>e2e/pages/secure-area-page.ts</code> - Secure area validations</li>
-            <li><code>e2e/login.test.ts</code> - Login functionality tests</li>
-            <li><code>e2e/secure-area.test.ts</code> - Secure area tests</li>
-        </ul>
-        
-        <div class="footer">
-            <p>Detox Demo Project • Testing https://the-internet.herokuapp.com/login simulation</p>
-            <p>Generated: $(date)</p>
-        </div>
+    <div id="alert"></div>
+    <div id="content">
+        <span class="spinner">
+            <span class="spinner__circle"></span>
+        </span>
     </div>
+    <div id="popup"></div>
+    <script src="app.js"></script>
+    <script src="plugin/behaviors/index.js"></script>
+    <script src="plugin/packages/index.js"></script>
+    <script src="plugin/screen-diff/index.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FVWC4GKEYS"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-FVWC4GKEYS', {
+          'allureVersion': '2.36.0',
+          'reportUuid': '05cf7b88-aa89-444c-be1a-ed5c5653cb98',
+          'single_file': false
+        });
+    </script>
 </body>
 </html>

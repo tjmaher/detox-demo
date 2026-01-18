@@ -13,8 +13,8 @@ on:
     branches: [ main ]
   
   # Run all tests before being merged to main, when branches are opened or synchronized
-  # pull_request:
-  #   branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
   # Run all tests every day at 10:00 PM EST  # schedule:
   #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC

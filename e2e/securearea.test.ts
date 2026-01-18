@@ -29,10 +29,11 @@ describe('Secure Area Flow', () => {
     BasePage.collectTestResult();
   });
 
-  it('Verify Secure Area Welcome Message', async () => {
+  it('Verify all Secure Area elements', async () => {
     await secureAreaPage.verifyHeading();
     await secureAreaPage.verifyBodyText();
     await secureAreaPage.verifySuccessBanner();
+    await secureAreaPage.verifyLogoutButtonVisible();
   });
 
   it('Logging out from Secure Area returns to Login Page displaying Success Message', async () => {

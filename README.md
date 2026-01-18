@@ -1,18 +1,35 @@
 # Detox Demo - React Native iOS App
 
-DetoxDemo is a React Native demo app that T.J. Maher will be using to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how at [SELF ID](https://selfid.com/), he has put together a mobile automated test framework for their SELF Mobile React Native app. 
+DetoxDemo is a React Native demo app that T.J. Maher will be using to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
+
+<table>
+<tr>
+<td width="50%">
+
+![Login Screen](docs/images/login-screen.png)
+*Login page*
+
+</td>
+<td width="50%">
+
+![Secure Area Screen](docs/images/secure-area-screen.png)
+*Secure area*
+
+</td>
+</tr>
+</table>
 
 DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. Reports are produced via [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter). CI/CD Test reports produced by a GitHub Actions workflow are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
 
-DetoxDemo, the app under test, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
+DetoxDemo, the app under test for this project, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
 
-The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher first started teaching himself automation development, writing Selenium + Java tests against it, back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/p/programming-projects.html)). 
+The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher first started teaching himself automation development, writing Selenium + Java tests against the website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
 
 T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 testing the SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. 
 
 T.J. Maher has been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
 
-If you find this project helpful, feel free to copy it and use it for your own education. 
+If you find this project helpful, feel free to copy it and use it for your own education. Like it? Give a shout out about it on LinkedIn! 
 
 ## Features
 
@@ -45,6 +62,37 @@ If you find this project helpful, feel free to copy it and use it for your own e
 ## Test Credentials
 - **Username**: `tomsmith`
 - **Password**: `SuperSecretPassword!`
+
+## Tools & Technologies
+
+### React Native
+
+React Native is an open-source framework created by Facebook - now Meta - for building mobile applications using JavaScript and the React library, a JavaScript library released in March 2013, also produced by Facebook, to create user interfaces for web applications. React Native was first released for iOS in March 2015 with the Android version in September 2015. 
+
+### Yarn
+
+This project uses [yarn](https://yarnpkg.com/) as a package manager. Yarn is a JavaScript package manager, developed by Facebook in 2016. Facebook had found npm (Node Package Manager) installed packages sequentially, causing bottlenecks. Yarn implemented parallel downloads, reducing installation times. (See [Yarn: A new package manager for JavaScript](https://engineering.fb.com/2016/10/11/web/yarn-a-new-package-manager-for-javascript/) on Engineering at Meta, October 2016.)
+
+### Detox
+
+Wix's Detox, first released in 2016, is an open-source, gray-box end-to-end (E2E) test automation framework, created at first to test Wix's own React Native mobile application that customers used to create their own websites. Features of Detox include:
+
+* Gray-Box Testing: Unlike "black-box" tools, Detox accesses the app's internal state to monitor asynchronous tasks like network requests, animations, and timers.
+* Automatic Synchronization: It automatically waits for the app to be idle before executing the next test action, which eliminates "flakiness" and the need for manual sleep/wait commands.
+* Cross-Platform: Supports both iOS and Android, allowing developers to write E2E tests in JavaScript that run on simulators, emulators, and real devices.
+* Native Integration: It relies on native drivers (like Espresso for Android and EarlGrey for iOS) to interact directly with the app's native layers.
+
+### Detox CLI
+
+Detox CLI is the command-line interface tool for Detox, the end-to-end testing framework for mobile apps (React Native, iOS, and Android). It provides commands to build apps, run tests, manage test devices/simulators, and configure your testing environment. First released by Wix on March 15, 2017.
+
+### Detox-Allure2-Adapter
+
+Still in the Alpha stage, detox-allure2-adapter is a bridge between Detox (the mobile E2E testing framework) and jest-allure2-reporter, enables integration of Allure reporting with Detox tests, providing reports with screenshots, videos, device logs, and view hierarchies. The adapter replaces Detox's built-in artifacts manager to integrate with Allure's reporting capabilities.
+
+### Allure Reports
+
+The Allure Framework, created as an internal product by Yandex that was open-sourced, and is now maintained by Qameta Software. According to an [article on Habr.com](https://habr.com/ru/companies/yandex/articles/232697/), published on Yandex's company blog in 2014, they wanted a way to make the automation results transparent not just to the automation engineers, but the entire testing team to make sure that the automation closely match the original manual tests. 
 
 ## Project Structure
 
@@ -107,11 +155,12 @@ detox-demo/
 ### Prerequisites
 - Node.js (>= 20)
 - Xcode (for iOS development)
-- iOS Simulator with iPhone 16 Pro
+- iOS Simulator (such as iPhone 16 Pro, used in this project)
 - React Native development environment ([Setup Guide](https://reactnative.dev/docs/set-up-your-environment))
 - Homebrew (for macOS dependencies)
 
 ### Install Dependencies
+
 ```bash
 # Install Node.js dependencies
 yarn install
@@ -191,11 +240,15 @@ Run the Ruby bundler to install CocoaPods itself:
 bundle install
 ```
 
+Build a version of the app with Detox embedded in it:
+
+```sh
+detox build --configuration ios.sim.debug
+```
+
 For more information, visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
 
 ## Step 3: Run the Tests Locally
-
-How to run tests:
 
 Run all the tests: 
 * detox test --configuration ios.sim.debug
@@ -203,7 +256,9 @@ Run all the tests:
 Run only the LoginPage tests in login.test.ts: 
 * detox test --configuration ios.sim.debug e2e/login.test.ts
 
-... Or you can run shortcuts to run the tests, found in the package.json file in the root directory:
+... Or you can run shortcuts to run the tests, found in the package.json file in the root directory such as:
+
+* yarn detox:test:ios
  
  ```sh
  "detox:build:ios": "detox build --configuration ios.sim.debug",

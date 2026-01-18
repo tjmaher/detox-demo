@@ -65,6 +65,7 @@ allure-report/
 # Detox
 e2e/artifacts/
 artifacts/
+!docs/images/*.png
 
 # Bundle artifacts
 *.jsbundle

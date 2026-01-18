@@ -1,18 +1,18 @@
 # Detox Demo - React Native iOS App
 
-DetoxDemo is a React Native application demonstrating Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. 
+DetoxDemo is a React Native demo app that T.J. Maher will be using to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how at [SELF ID](https://selfid.com/), he has put together a mobile automated test framework for their SELF Mobile React Native app. 
 
-Produces [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter) which are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
+DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. Reports are produced via [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter). CI/CD Test reports produced by a GitHub Actions workflow are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
 
-DetoxDemo, the app under test, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey GitHub CoPilot took at: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
+DetoxDemo, the app under test, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
 
-DetoxDemo is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher taught himself automation development writing Selenium + Java tests against it back in July 2015 in his project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/p/programming-projects.html)). 
+The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. Maher first started teaching himself automation development, writing Selenium + Java tests against it, back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/p/programming-projects.html)). 
 
-T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 putting together a UI automation framework for their SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. This project was created since T.J. Maher will be blogging about what he has learned and needed a React Mobile app to test against. T.J. will be giving a talk about his experience putting the framework together in April 2026 to Joe Colantonio's [Automation Guild](https://testguild.com/). 
+T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 testing the SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. 
 
 T.J. Maher has been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
 
-If you find this project helpful, feel free to copy it for your own education. 
+If you find this project helpful, feel free to copy it and use it for your own education. 
 
 ## Features
 
@@ -72,6 +72,9 @@ detox-demo/
 │       └── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
 │
 ├── ios/                          # iOS native project files and Xcode configuration
+│   ├── build/                    # Xcode build output (generated)
+│   │   └── Build/Products/Debug-iphonesimulator/
+│   │       └── DetoxDemo.app     # Built app for Detox testing
 │   └── DetoxDemo/
 │       └── Images.xcassets/
 │           └── AppIcon.appiconset/ # Custom app icons
@@ -82,9 +85,20 @@ detox-demo/
 ├── assets/                       # Static assets and resources
 │   └── app-icon.svg              # SVG source for app icon generation
 │
+├── artifacts/                    # Detox test artifacts (generated on test failures)
+│   ├── attachments/              # Device logs from failed tests
+│   └── ios.sim.debug.*/          # Per-test-run artifacts (screenshots, videos, logs)
+│
+├── allure-results/              # Allure test results JSON files
+├── allure-report/               # Generated Allure HTML reports (local and CI)
+│
+├── node_modules/                # Node.js dependencies 
 ├── .detoxrc.js                  # Detox configuration targeting iPhone 16 Pro simulator
 ├── jest.config.js               # React Native unit tests configuration
 ├── package.json                 # Dependencies and yarn scripts for detox:ios commands
+├── yarn.lock                    # Locked dependency versions
+├── Gemfile                      # Ruby dependencies for CocoaPods
+├── Gemfile.lock                 # Locked Ruby gem versions
 └── README.md                    
 ```
 

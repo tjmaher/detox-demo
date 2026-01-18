@@ -6,13 +6,13 @@ DetoxDemo is a React Native demo app that T.J. Maher will be using to demonstrat
 <tr>
 <td width="50%">
 
-![Login Screen](docs/images/login-screen.png)
+![Login Screen](docs/images/login-page.png)
 *Login page*
 
 </td>
 <td width="50%">
 
-![Secure Area Screen](docs/images/secure-area-screen.png)
+![Secure Area Screen](docs/images/secure-area.png)
 *Secure area*
 
 </td>

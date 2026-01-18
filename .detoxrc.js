@@ -1,6 +1,16 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
-  extends: "detox-allure2-adapter/preset-detox",
+  extends: 'detox-allure2-adapter/preset',
+  
+  artifacts: {
+    rootDir: 'artifacts',
+    plugins: {
+      screenshot: 'failing',
+      video: 'failing',
+      log: 'failing',
+      uiHierarchy: 'failing',
+    }
+  },
   testRunner: {
     args: {
       '$0': 'jest',
@@ -34,15 +44,6 @@ module.exports = {
     'ios.sim.debug': {
       device: 'simulator',
       app: 'ios.debug'
-    }
-  },
-  artifacts: {
-    plugins: {
-      screenshot: 'failing',
-      video: 'failing', 
-      instruments: 'none',
-      log: 'failing',
-      uiHierarchy: 'failing'
     }
   }
 };

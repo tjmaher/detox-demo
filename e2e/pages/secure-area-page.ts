@@ -14,7 +14,7 @@ class SecureAreaPage extends BasePage {
   private static readonly secureAreaInstructionText = 'Welcome to the Secure Area. When you are done click logout below.';
 
   async waitToLoad() {
-    this.log('SecureAreaPage: Verifying Page is Loaded');
+    this.log('\nSecureArea: Verifying Page is Loaded');
     await waitFor(element(this.heading)).toBeVisible().withTimeout(TEN_SECONDS);
   }
 

@@ -20,7 +20,7 @@ class LoginPage extends BasePage {
   private static readonly logoutSuccessText = 'You logged out of the secure area!';
 
   async waitToLoad() {
-    this.log('LoginPage: Verifying Page is Loaded');
+    this.log('\nLoginPage: Verifying Page is Loaded');
     await waitFor(element(this.heading)).toBeVisible().withTimeout(TEN_SECONDS);
   }
 
@@ -58,14 +58,14 @@ class LoginPage extends BasePage {
   }
 
   async verifyLogoutSuccessMessage() {
-    this.log('LoginPage: Verifying Logout Success Message:');
+    this.log('\nLoginPage: Verifying Logout Success Message:');
     this.log(` * Expected Text: ${LoginPage.logoutSuccessText}`);
     await this.expectElementToBeVisible(this.successBanner);
     await this.verifyElementHasText(this.successLogoutTextElement, LoginPage.logoutSuccessText);
   }
 
   async loginAs(username: string, password: string) {
-    this.log(`LoginPage: Logging in as ${username} / ${password}`);
+    this.log(`\nLoginPage: Logging in as ${username} / ${password}`);
     await this.waitToLoad();
     await this.enterUsername(username);
     await this.enterPassword(password);

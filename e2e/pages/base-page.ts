@@ -41,12 +41,11 @@ export default abstract class BasePage {
   }
 
   static outputAllTestResults() {
-
     BasePage.allTestResults.forEach(result => {
-      // Combine all output into a single console.log to avoid Detox timestamp prefixes
-      let output = `${result.testName}  `;
-      output += `Status: ${result.status === 'PASS' ? '✅ PASS' : '❌ FAIL'}\n`;
+      let output = `\n${result.testName}  \n`;
+      output += result.logs.map(log => ` ${log}`).join('\n');
       
+      // Only show error information if test failed
       if (result.error && result.status === 'FAIL') {
         output += `Error: ${result.error}\n`;
       }

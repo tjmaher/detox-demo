@@ -59,6 +59,8 @@ yarn-error.log
 .expo/
 web-build/
 dist/
+allure-results/
+allure-report/
 
 # Detox
 e2e/artifacts/

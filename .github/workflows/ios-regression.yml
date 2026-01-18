@@ -219,13 +219,13 @@ jobs:
           
           echo "Starting Detox tests on iPhone 16 Pro with Metro running..."
           
-          # Run Detox tests with explicit Allure environment variables
+          # Run Detox tests
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
             echo "Running all Detox tests..."
-            JEST_ALLURE2_REPORTER_RESULTS_DIR=allure-results yarn detox:test:ios --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
+            yarn detox:test:ios --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
           else
             echo "Running specific test: ${{ github.event.inputs.test_suite }}"
-            JEST_ALLURE2_REPORTER_RESULTS_DIR=allure-results yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
+            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug --artifacts-location artifacts --record-logs all || echo "Tests completed with failures"
           fi
           
           # Check if allure-results has content
@@ -242,7 +242,6 @@ jobs:
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true
           RCT_METRO_PORT: 8081
-          JEST_ALLURE2_REPORTER_RESULTS_DIR: allure-results
 
       - name: Upload test artifacts
         if: always()
@@ -276,81 +275,28 @@ jobs:
           eval "$(/opt/homebrew/bin/brew shellenv)"
           brew install allure
 
+      - name: Verify Allure installation
+        run: |
+          echo "Verifying Allure installation..."
+          allure --version
+          
+          # DEBUG: Check what was actually created
+          echo "=== Checking for allure-results after test execution ==="
+          if [ -d "allure-results" ]; then
+            echo "allure-results directory exists"
+            ls -laR allure-results/
+            echo "JSON file count: $(find allure-results -name '*.json' -type f | wc -l)"
+          else
+            echo "ERROR: allure-results directory does NOT exist!"
+          fi
+          
+
       - name: Generate Allure report from Detox results
         run: |
           echo "Generating Allure report..."
           
-          # Check if we have actual test results from tests
-          if [ -d "allure-results" ] && [ "$(find allure-results -name '*.json' -type f | wc -l)" -gt 0 ]; then
-            echo "Found $(find allure-results -name '*.json' -type f | wc -l) test result files"
-            ls -la allure-results/
-            allure generate allure-results --clean -o allure-report
-            echo "Allure report generated successfully with test results"
-          else
-            echo "No test results found, creating fallback report"
-            mkdir -p allure-report
-            cat > allure-report/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Detox Demo Project - Test Results</title>
-              <style>
-                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 40px; background: #f5f7fa; }
-                  .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-                  h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
-                  .status { padding: 20px; border-radius: 8px; margin: 20px 0; }
-                  .warning { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
-                  .info { background: #d1ecf1; border-left: 4px solid #17a2b8; color: #0c5460; }
-                  .command { background: #f8f9fa; padding: 15px; border-radius: 6px; font-family: 'Monaco', monospace; margin: 10px 0; }
-                  ul { line-height: 1.6; }
-                  .footer { text-align: center; color: #6c757d; margin-top: 30px; font-size: 0.9em; }
-              </style>
-          </head>
-          <body>
-              <div class="container">
-                  <h1>🧪 Detox Demo Project - Test Results</h1>
-                  
-                  <div class="status warning">
-                      <h3>⚠️ No Test Results Available</h3>
-                      <p>The Detox tests for login functionality simulation did not generate Allure-compatible results.</p>
-                  </div>
-                  
-                  <div class="info">
-                      <h3>📋 Expected Test Coverage:</h3>
-                      <ul>
-                          <li><strong>Login Page</strong> - Username/password input validation</li>
-                          <li><strong>Secure Area</strong> - Success banner verification</li>
-                          <li><strong>Error Handling</strong> - Invalid credentials testing</li>
-                          <li><strong>Navigation Flow</strong> - Login to secure area transitions</li>
-                      </ul>
-                  </div>
-                  
-                  <h3>🔧 Local Testing Commands:</h3>
-                  <div class="command">yarn detox:build:ios</div>
-                  <div class="command">yarn detox:test:ios</div>
-                  <div class="command">yarn detox:ios</div>
-                  
-                  <h3>📁 Test Structure:</h3>
-                  <ul>
-                      <li><code>e2e/pages/base-page.ts</code> - Base Page class</li>
-                      <li><code>e2e/pages/login-page.ts</code> - Login screen interactions</li>
-                      <li><code>e2e/pages/secure-area-page.ts</code> - Secure area validations</li>
-                      <li><code>e2e/login.test.ts</code> - Login functionality tests</li>
-                      <li><code>e2e/secure-area.test.ts</code> - Secure area tests</li>
-                  </ul>
-                  
-                  <div class="footer">
-                      <p>Detox Demo Project • Testing https://the-internet.herokuapp.com/login simulation</p>
-                      <p>Generated: $(date)</p>
-                  </div>
-              </div>
-          </body>
-          </html>
-          EOF
-            echo "Fallback report created"
-          fi
+          allure generate allure-results --clean -o allure-report
+          echo "Allure report generated successfully with test results"
 
       - name: Upload Allure report artifacts
         if: always()

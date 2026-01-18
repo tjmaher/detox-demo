@@ -1,6 +1,6 @@
 /** @type {Detox.DetoxConfig} */
 module.exports = {
-  extends: 'detox-allure2-adapter/preset',
+  extends: 'detox-allure2-adapter/preset-detox',
   
   artifacts: {
     rootDir: 'artifacts',
@@ -16,9 +16,6 @@ module.exports = {
     args: {
       '$0': 'jest',
       config: 'e2e/jest.config.js'
-    },
-    jest: {
-      setupFilesAfterEnv: ['./e2e/init.ts']
     }
   },
   

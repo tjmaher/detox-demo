@@ -6,26 +6,18 @@ module.exports = {
   maxWorkers: 1,
   globalSetup: 'detox/runners/jest/globalSetup',
   globalTeardown: 'detox/runners/jest/globalTeardown',
-  testEnvironment: 'detox/runners/jest/testEnvironment',
-  verbose: true,
-  
   reporters: [
     'detox/runners/jest/reporter',
     [
       'jest-allure2-reporter',
       {
+        extends: 'detox-allure2-adapter/preset-allure',
         resultsDir: 'allure-results',
-        testCaseNameTemplate: '{ancestorTitles} {title}',
-        suiteNameTemplate: '{filepath}',
-        overwrite: false,
-        attachments: true,
-        // Critical: Add these to ensure proper Allure integration
-        testCasePropertiesMode: 'merge',
-        attachmentsBaseURL: 'attached://'
       },
     ],
   ],
-
+  testEnvironment: 'detox/runners/jest/testEnvironment',
+  verbose: true,
   testEnvironmentOptions: {
     eventListeners: [
       'jest-metadata/environment-listener',
@@ -34,8 +26,10 @@ module.exports = {
         'detox-allure2-adapter',
         {
           enabled: true,
-          // Add explicit configuration
-          attachmentsSubDir: 'attachments',
+          deviceLogs: true,
+          deviceScreenshots: true,
+          deviceVideos: true,
+          deviceViewHierarchy: true,
         },
       ],
     ],

@@ -70,6 +70,16 @@ export default abstract class BasePage {
     return textElement;
   }
 
+  protected async dismissKeyboard(inputSelector: Detox.NativeMatcher) {
+    if (device.getPlatform() === 'ios') {
+      try {
+        await element(inputSelector).tapReturnKey();
+      } catch (error) {
+        this.log(` * Keyboard already dismissed or return key not available: ${error}`);
+      }
+    }
+  }
+
   async expectElementToBeVisible(locator: any) {
     await expect(element(locator)).toBeVisible();
   }

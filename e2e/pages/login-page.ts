@@ -39,11 +39,13 @@ class LoginPage extends BasePage {
   async enterUsername(username: string) {
     this.log(` * Entering Username: ${username}`);
     await element(this.usernameInput).replaceText(username);
+    await this.dismissKeyboard(this.usernameInput);
   }
 
   async enterPassword(password: string) {
     this.log(` * Entering Password: ${password}`);
     await element(this.passwordInput).replaceText(password);
+    await this.dismissKeyboard(this.passwordInput);
   }
 
   async tapLoginButton(){

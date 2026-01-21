@@ -1,0 +1,1 @@
+DEBUG	com.wix.Detox:WebSocket	Action received: currentStatus

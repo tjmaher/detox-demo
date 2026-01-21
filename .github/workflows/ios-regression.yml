@@ -218,6 +218,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ios-build-${{ github.run_id }}
+          
+      - name: Verify build artifacts
+        run: |
+          echo "Verifying iOS app build..."
+          ls -la ios/build/Build/Products/Debug-iphonesimulator/
+          
+          # Check if .app exists
+          if [ -d "ios/build/Build/Products/Debug-iphonesimulator/DetoxDemo.app" ]; then
+            echo "✅ DetoxDemo.app found"
+            ls -la ios/build/Build/Products/Debug-iphonesimulator/DetoxDemo.app/
+          else
+            echo "❌ ERROR: DetoxDemo.app not found!"
+            exit 1
+          fi
 
       - name: Install Applesimutils
         run: |
@@ -242,9 +256,20 @@ jobs:
           yarn start --reset-cache &
           METRO_PID=$!
           
-          # Wait for Metro to be ready
+          # Wait for Metro to be ready with healthcheck
           echo "Waiting for Metro bundler to start..."
-          sleep 15
+          sleep 10
+          
+          # Verify Metro is responding
+          echo "Checking Metro health..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then
+              echo "Metro is ready!"
+              break
+            fi
+            echo "Waiting for Metro... attempt $i/30"
+            sleep 1
+          done
           
           # List available simulators
           echo "Available iOS simulators:"
@@ -259,18 +284,18 @@ jobs:
             echo "Booting $DEVICE_NAME..."
             xcrun simctl boot "$SIMULATOR_ID" || echo "Simulator already booted"
             
-            # Wait for simulator to fully boot
+            # Wait longer and verify simulator is actually ready
             echo "Waiting for simulator to boot completely..."
             sleep 10
             
-            # Verify simulator is booted
+            # Wait for simulator to be fully booted
+            until xcrun simctl bootstatus "$SIMULATOR_ID" | grep -q "Device already booted"; do
+              echo "Waiting for simulator to finish booting..."
+              sleep 2
+            done
+            
+            echo "Simulator ready!"
             xcrun simctl list devices | grep "$SIMULATOR_ID"
-          else
-            echo "ERROR: $DEVICE_NAME simulator not found!"
-            echo "Available simulators:"
-            xcrun simctl list devices | grep "iPhone\|iPad"
-            kill $METRO_PID || true
-            exit 1
           fi
           
           echo "Starting Detox tests on $DEVICE_NAME with Metro running..."

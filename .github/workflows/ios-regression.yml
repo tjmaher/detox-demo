@@ -30,6 +30,67 @@ on:
           - 'all'
           - 'login.test.ts'
           - 'secure-area.test.ts'
+      device:
+        description: 'Select iOS device to run tests on'
+        required: true
+        type: choice
+        default: 'iPhone 16 Pro'
+        options:
+          - 'iPhone 16'
+          - 'iPhone 16 Pro'
+          - 'iPhone 16 Pro Max'
+          - 'iPad mini (6th generation)'
+          - 'iPad Air (5th generation)'
+          - 'iPad Pro (12.9-inch) (6th generation)'
+      logger_level:
+        description: 'Log levels - most to least verbose'
+        required: true
+        type: choice
+        default: 'info'
+        options:
+          - 'trace'
+          - 'debug'
+          - 'verbose'
+          - 'info'
+          - 'warn'
+          - 'error'
+          - 'fatal'
+      # Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)
+      capture_logs:
+        description: 'Capture test logs?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      capture_screenshots:
+        description: 'Capture screenshots?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      capture_video:
+        description: 'Capture video?'
+        required: true
+        type: choice
+        default: 'none'
+        options:
+          - 'none'
+          - 'failing'
+          - 'all'
+      record_performance:
+        description: 'Detox Instruments performance? (iOS only)'
+        required: true
+        type: choice
+        default: 'none'
+        options:
+          - 'none'
+          - 'all'
 
 jobs:
   # Setup and Build
@@ -172,6 +233,10 @@ jobs:
           mkdir -p allure-results
           mkdir -p artifacts
           
+          # Set device from workflow input or default to iPhone 16 Pro for automated runs
+          DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          echo "Running tests on device: $DEVICE_NAME"
+          
           # Start Metro bundler for tests
           echo "Starting Metro bundler for test execution..."
           yarn start --reset-cache &
@@ -185,13 +250,13 @@ jobs:
           echo "Available iOS simulators:"
           xcrun simctl list devices available
           
-          # Find and boot iPhone 16 Pro simulator explicitly
-          echo "Looking for iPhone 16 Pro simulator..."
-          SIMULATOR_ID=$(xcrun simctl list devices | grep "iPhone 16 Pro" | grep -v "Max" | head -1 | grep -o '[A-Z0-9-]\{36\}')
+          # Find and boot the selected simulator
+          echo "Looking for $DEVICE_NAME simulator..."
+          SIMULATOR_ID=$(xcrun simctl list devices | grep "$DEVICE_NAME" | head -1 | grep -o '[A-Z0-9-]\{36\}')
           
           if [ ! -z "$SIMULATOR_ID" ]; then
-            echo "Found iPhone 16 Pro simulator: $SIMULATOR_ID"
-            echo "Booting iPhone 16 Pro..."
+            echo "Found $DEVICE_NAME simulator: $SIMULATOR_ID"
+            echo "Booting $DEVICE_NAME..."
             xcrun simctl boot "$SIMULATOR_ID" || echo "Simulator already booted"
             
             # Wait for simulator to fully boot
@@ -201,22 +266,52 @@ jobs:
             # Verify simulator is booted
             xcrun simctl list devices | grep "$SIMULATOR_ID"
           else
-            echo "ERROR: iPhone 16 Pro simulator not found!"
-            echo "Available iPhone simulators:"
-            xcrun simctl list devices | grep "iPhone"
+            echo "ERROR: $DEVICE_NAME simulator not found!"
+            echo "Available simulators:"
+            xcrun simctl list devices | grep "iPhone\|iPad"
             kill $METRO_PID || true
             exit 1
           fi
           
-          echo "Starting Detox tests on iPhone 16 Pro with Metro running..."
+          echo "Starting Detox tests on $DEVICE_NAME with Metro running..."
           
-          # Run Detox tests
+          # Set artifact capture settings from workflow inputs (defaults for automated runs)
+          LOG_LEVEL="${{ github.event.inputs.logger_level || 'info' }}"
+          CAPTURE_LOGS="${{ github.event.inputs.capture_logs || 'failing' }}"
+          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || 'failing' }}"
+          CAPTURE_VIDEO="${{ github.event.inputs.capture_video || 'none' }}"
+          RECORD_PERFORMANCE="${{ github.event.inputs.record_performance || 'none' }}"
+          
+          echo "Test configuration:"
+          echo "  Device: $DEVICE_NAME"
+          echo "  Log level: $LOG_LEVEL"
+          echo "  Capture logs: $CAPTURE_LOGS"
+          echo "  Capture screenshots: $CAPTURE_SCREENSHOTS"
+          echo "  Capture video: $CAPTURE_VIDEO"
+          echo "  Record performance: $RECORD_PERFORMANCE"
+          
+          # Run Detox tests with artifact settings
           if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
             echo "Running all Detox tests..."
-            yarn detox:test:ios || echo "Tests completed with failures"
+            yarn detox:test:ios \
+              --loglevel "$LOG_LEVEL" \
+              --artifacts-location artifacts \
+              --record-logs "$CAPTURE_LOGS" \
+              --take-screenshots "$CAPTURE_SCREENSHOTS" \
+              --record-videos "$CAPTURE_VIDEO" \
+              --record-performance "$RECORD_PERFORMANCE" \
+              || echo "Tests completed with failures"
           else
             echo "Running specific test: ${{ github.event.inputs.test_suite }}"
-            yarn detox test e2e/${{ github.event.inputs.test_suite }} --configuration ios.sim.debug || echo "Tests completed with failures"
+            yarn detox test e2e/${{ github.event.inputs.test_suite }} \
+              --configuration ios.sim.debug \
+              --loglevel "$LOG_LEVEL" \
+              --artifacts-location artifacts \
+              --record-logs "$CAPTURE_LOGS" \
+              --take-screenshots "$CAPTURE_SCREENSHOTS" \
+              --record-videos "$CAPTURE_VIDEO" \
+              --record-performance "$RECORD_PERFORMANCE" \
+              || echo "Tests completed with failures"
           fi
           
           # Check if allure-results has content
@@ -261,6 +356,29 @@ jobs:
           name: detox-test-results-${{ github.run_id }}
         continue-on-error: true
 
+      - name: Checkout GitHub Pages branch for history
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages-history
+
+      - name: Copy previous Allure history
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "Copying Allure history from previous report..."
+          if [ -d "gh-pages-history/ios/history" ]; then
+            echo "Found previous history, copying to allure-results..."
+            mkdir -p allure-results/history
+            cp -r gh-pages-history/ios/history/* allure-results/history/ || true
+            echo "History copied successfully"
+            ls -la allure-results/history/
+          else
+            echo "No previous history found, this will be the first report"
+          fi
+
       - name: Setup Allure
         run: |
           eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -280,14 +398,23 @@ jobs:
           else
             echo "ERROR: allure-results directory does NOT exist!"
           fi
-          
 
       - name: Generate Allure report from Detox results
         run: |
-          echo "Generating Allure report..."
+          echo "Generating Allure report with history..."
           
+          # Generate report - Allure will automatically use history from allure-results/history
           allure generate allure-results --clean -o allure-report
-          echo "Allure report generated successfully with test results"
+          
+          echo "Allure report generated successfully with test results and history"
+          
+          # Verify history was included
+          if [ -d "allure-report/history" ]; then
+            echo "History successfully included in new report"
+            ls -la allure-report/history/
+          else
+            echo "No history in generated report (this is normal for first run)"
+          fi
 
       - name: Upload Allure report artifacts
         if: always()

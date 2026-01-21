@@ -92,6 +92,11 @@ Wix's Detox, first released in 2016, is an open-source, gray-box end-to-end (E2E
 
 Detox CLI is the command-line interface tool for Detox, the end-to-end testing framework for mobile apps (React Native, iOS, and Android). It provides commands to build apps, run tests, manage test devices/simulators, and configure your testing environment. First released by Wix on March 15, 2017.
 
+Example Detox CLI command:
+```
+detox test --configuration ios.sim.debug --loglevel info --artifacts-location artifacts --record-logs failing --take-screenshots failing --record-videos none --record-performance none
+```
+
 ### Detox-Allure2-Adapter
 
 Still in the Alpha stage, detox-allure2-adapter is a bridge between Detox (the mobile E2E testing framework) and jest-allure2-reporter, enables integration of Allure reporting with Detox tests, providing reports with screenshots, videos, device logs, and view hierarchies. The adapter replaces Detox's built-in artifacts manager to integrate with Allure's reporting capabilities.
@@ -176,17 +181,17 @@ bundle install
 ```
 
 ### iOS Setup
-```bash
-# Install CocoaPods dependencies
-cd ios && pod install && cd ..
 
-# Install Detox CLI globally
-yarn global add detox-cli
+**Install [CocoaPods](https://cocoapods.org/) dependencies:**
+* cd ios && pod install && cd ..
 
-# Install applesimutils, for Detox iOS testing
-brew tap wix/brew
-brew install applesimutils
-```
+**Install [Detox CLI](https://wix.github.io/Detox/docs/19.x/api/detox-cli/) globally:**
+* yarn global add detox-cli
+
+**Install [applesimutils](https://github.com/wix/AppleSimulatorUtils), for Detox iOS testing:**
+* brew tap wix/brew
+* brew install applesimutils
+
 
 ### Detox Setup
 ```bash
@@ -318,19 +323,28 @@ The `ios-regression.yml` workflow provides automated testing with a multi-stage 
 * Click on "Run workflow". 
 * Under "Use workflow from:" dropdown, you can select your branch you want to test against. 
 * Which tests do you want to run? The default "all"? Or was there a particular test scenario you wanted? 
-* That is the last choice you need to make. Hit "Run Workflow"
+* Which device do you want to run the tests on? An iPhone 16, 16 Pro, or a 16 Pro Max? An iPad mini, iPad Ait, ot iPad Pro? 
 
-It takes 30 minutes to build the Detox app and 30 minutes to set up the simulator run all tests. 
+You can also set up in our Buid & Test iOS GitHub Actions workflow with the [Detox CLI](https://wix.github.io/Detox/docs/19.x/api/detox-cli/) (command-line interface) which Detox artifacts you wish to capture ([See Detox / Artifacts](https://wix.github.io/Detox/docs/config/artifacts/)): 
+* What log levels do you want to set? From most to least verbose, we have: trace, debug, verbose, info, warn, error, or fatal?
+* How do you want to capture test logs? failing, all, or none?
+* How do you want to capture screenshots? failing, all, or none?
+* What about capturing videos? failing, all, or none?  
+* Do you want to add [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) performance (iOS only): none or all? 
+
+==> That is the last choice you need to make. Hit "Run Workflow"
+
+It takes 30 minutes to build the Detox app and 10 minutes to set up the simulator run all tests. 
 
 ### Pipeline Stages
-1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for iPhone 16 Pro simulator
-2. **Test Stage**: Boots iPhone 16 Pro simulator running Detox tests collecting artifacts such as screenshots, videos, logs
+1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for default iPhone 16 Pro simulator
+2. **Test Stage**: Boots default iPhone 16 Pro simulator running Detox tests collecting artifacts such as screenshots, videos, logs
 3. **Allure Report Stage**: Generates HTML test reports, deploying to GitHub Pages at https://tjmaher.github.io/detox-demo/ios/
 4. **Cleanup Stage**: Removes temporary files and shuts down simulators
 
 ### Key Features
 - **Triggered on**: Push to main, pull requests, manual dispatch with test suite selection
-- **iPhone 16 Pro Focus**: Uses iPhone 16 Pro simulator
+- **iPhone 16 Pro Focus**: Uses iPhone 16 Pro simulator if default is selected
 - **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
 - **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
 - **Live Reports**: Publishes test results to GitHub Pages for easy access
@@ -351,7 +365,7 @@ This project uses [detox-allure2-adapter](https://github.com/wix-incubator/detox
 - **CI Integration**: Automatic report generation and deployment
 
 ### Configuration
-The adapter is configured in `.detoxrc.js` and `e2e/jest.config.js` to capture artifacts on failing tests and generate results in `allure-results/`.
+The adapter is configured in `.detoxrc.js` and `e2e/jest.config.js` to capture artifacts on failing tests and generate results in `allure-results/`.  
 
 ### Viewing Reports
 
@@ -405,4 +419,19 @@ yarn start --reset-cache
 # Start Metro on different port
 yarn start --port 8082
 ```
+## Detox Instruments
 
+DetoxInstruments, part of the [Wix Incubator](https://github.com/wix-incubator/DetoxInstruments), is a macOS performance profiling tool that can run from Wix for iOS apps. It captures CPU, memory, disk, network, and FPS metrics during app execution.
+
+### Key Features
+* Visual timeline of performance metrics
+* Integration with Detox test execution
+* Automated performance regression detection in CI/CD
+* Usage in DetoxDemo
+* The [Build & Test iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) GitHub Actions workflow has a record_performance option.
+
+When set to 'all', it records performance profiles to help identify:
+* Slow UI interactions
+* Memory leaks
+* Network bottlenecks
+* App startup time issues

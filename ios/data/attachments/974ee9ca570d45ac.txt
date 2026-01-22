@@ -1,0 +1,3 @@
+DEBUG	com.wix.Detox:WebSocket	Action received: isReady
+DEBUG	com.wix.Detox:WebSocket	Action received: waitForActive
+DEBUG	com.wix.Detox:WebSocket	Action received: invoke

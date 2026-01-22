@@ -1,0 +1,2 @@
+DEBUG	com.facebook.react.log:javascript	Running "DetoxDemo" with {"rootTag":11,"initialProps":{},"fabric":true}
+ERROR		fastapps timed out waiting for clips 2 after 125.763422s

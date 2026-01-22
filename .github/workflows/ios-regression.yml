@@ -600,14 +600,15 @@ jobs:
           Record.Performance=${{ github.event.inputs.record_performance || env.DEFAULT_RECORD_PERFORMANCE }}
           
           # CI/CD Information
+          Branch=${{ github.ref_name }}
+          Commit.SHA=${{ github.sha }}
+          Commit.Author=${{ github.actor }}
+          Commit.Message=$(git log -1 --pretty=%B | head -n 1)
+          Repository=${{ github.repository }}
           Workflow.Run.ID=${{ github.run_id }}
           Workflow.Run.Number=${{ github.run_number }}
           Workflow.Attempt=${{ github.run_attempt }}
           Trigger=${{ github.event_name }}
-          Branch=${{ github.ref_name }}
-          Commit.SHA=${{ github.sha }}
-          Commit.Author=${{ github.actor }}
-          Repository=${{ github.repository }}
           Run.Date=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           EOF
           

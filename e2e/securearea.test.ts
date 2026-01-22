@@ -4,15 +4,15 @@ import secureAreaPage from './pages/secure-area-page';
 import { validUser } from './credentials';
 import BasePage from './pages/base-page';
 
-describe('Secure Area Flow', () => {
+describe('Secure Area Flow: ', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
     await loginPage.waitToLoad();
   });
 
   afterAll(async () => {
-    await device.terminateApp();
     BasePage.outputAllTestResults();
+    await device.terminateApp();
   });
 
   beforeEach(async () => {

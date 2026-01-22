@@ -4,7 +4,7 @@ import secureAreaPage from './pages/secure-area-page';
 import { validUser, invalidUser } from './credentials';
 import BasePage from './pages/base-page';
 
-describe('Login Flow', () => {
+describe('Login Flow: ', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
     await loginPage.waitToLoad();
@@ -12,6 +12,7 @@ describe('Login Flow', () => {
 
   afterAll(async () => {
     BasePage.outputAllTestResults();
+    await device.terminateApp();
   });
 
   beforeEach(async () => {

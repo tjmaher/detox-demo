@@ -19,7 +19,16 @@ export default abstract class BasePage {
   }
 
   static collectTestResult(testResult?: { success: boolean; error?: string }) {
-    const testName = jestExpect.getState().currentTestName || 'Unknown Test';
+    const currentTest = jestExpect.getState();
+    const testName = currentTest.currentTestName || 'Unknown Test';
+    
+    let formattedTestName = testName;
+    
+    // If Jest provides the full path with separator, use it
+    //   Jest often provides "DescribeBlock › itBlock" format
+    if (currentTest.testPath) {
+      formattedTestName = testName.replace(' › ', ': ');
+    }
     
     // Use Jest's test result if available, otherwise default to PASS
     let testStatus: 'PASS' | 'FAIL' = 'PASS';
@@ -31,7 +40,7 @@ export default abstract class BasePage {
     }
     
     BasePage.allTestResults.push({
-      testName,
+      testName: formattedTestName,
       status: testStatus,
       error: errorMessage,
       logs: [...BasePage.testLogs]
@@ -42,15 +51,14 @@ export default abstract class BasePage {
 
   static outputAllTestResults() {
     BasePage.allTestResults.forEach(result => {
-      let output = `\n${result.testName}  \n`;
+      let output = `\n==${result.testName}==\n`;
       output += result.logs.map(log => ` ${log}`).join('\n');
       
       // Only show error information if test failed
       if (result.error && result.status === 'FAIL') {
-        output += `Error: ${result.error}\n`;
+        output += `\nError: ${result.error}\n`;
       }
       
-      output += result.logs.map(log => ` ${log}`).join('\n');
       output += `\n ================================\n`;
       
       console.log(output);

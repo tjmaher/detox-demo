@@ -1,8 +1,25 @@
 # Detox Demo - React Native iOS App
 
-DetoxDemo is a React Native demo app that T.J. Maher will be using to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
+DetoxDemo is a working React Native demo app that gives examples of:
+* [Mobile automation tests](https://github.com/tjmaher/detox-demo/blob/main/e2e/login.test.ts) written in Detox + TypeScript 
+* Commonly used test code refactored into [Page Objects](https://github.com/tjmaher/detox-demo/tree/main/e2e/pages)
+* Common methods used by Page Objects refactored into a [Base Page](https://github.com/tjmaher/detox-demo/blob/main/e2e/pages/base-page.ts)
+* Log reports published after a test run, written like a manual test plan testers can follow
+* Pre-written yarn scripts to build and test stored in a [package.json](https://github.com/tjmaher/detox-demo/blob/main/package.json)
+* detox-allure2-adapter set up in [.detoxrc.js](https://github.com/tjmaher/detox-demo/blob/main/.detoxrc.js) and the [e2e/jest.config.js](https://github.com/tjmaher/detox-demo/blob/main/e2e/jest.config.js)
+* [Allure Reports](https://tjmaher.github.io/detox-demo/ios/) configured to show historical data
+* CI/CD provided by [GitHub Action workflow](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml)
+* A working React Native mobile app for iOS [complete with source code](https://github.com/tjmaher/detox-demo/tree/main/src)
+* A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
+* Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
 
-The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. first started teaching himself automation development, writing Selenium + Java tests against that website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
+[Build & Test Workflow](https://github.com/tjmaher/detox-demo/actions/runs/21231553151/workflow) demonstrates:
+* Mobile Automated Regression Test Suite set up to be automatically kicked off via pushed code, pull requests, or cron job
+* Developers manually kick off tests against their new branch of code before merging, or against the main branch
+* Tests run on various iPhone and iPad simulators 
+* Artifacts customized such as log levels, screenshots, videos, and Detox Instrument performance
+* Detox CLI set up to run a test suite with various log levels, screenshots, videos, and Detox Instrument performance
+* Homebrew, RubyGems, Cocoapods, Node.js, Applesimutils can be configured
 
 <div align="center">
 
@@ -27,6 +44,10 @@ The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the
 
 </div>
 
+T.J. Maher will be using DetoxDemo to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
+
+The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. first started teaching himself automation development, writing Selenium + Java tests against that website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
+
 DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. Reports are produced via [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter). CI/CD Test reports produced by a GitHub Actions workflow are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
 
 DetoxDemo, the app under test for this project, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
@@ -35,7 +56,7 @@ T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since J
 
 T.J. Maher has been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
 
-If you find this project helpful, feel free to copy it and use it for your own education. Like it? Give a shout out about it on LinkedIn! 
+If you find this project helpful, feel free to copy it and use it for your own education. Like it? Give a shout out and tag me [on LinkedIn](https://www.linkedin.com/in/tjmaher1/)! 
 
 ## Features
 
@@ -251,7 +272,7 @@ Run the Ruby bundler to install CocoaPods itself:
 bundle install
 ```
 
-Build a version of the app with Detox embedded in it:
+Build a version of the app with Detox embedded:
 
 ```sh
 detox build --configuration ios.sim.debug
@@ -278,7 +299,7 @@ Run only the LoginPage tests in login.test.ts:
 ```
 
 To run one of the shortcuts, add the command "yarn" plus the shortcut:
-* Run all the tests on an iOS elmulator in debug mode: yarn detox:test:ios
+* Run all the tests on an iOS emulator in debug mode: yarn detox:test:ios
 
 Detox has a REPL mode, a Run - Evaluate - Print Loop where you can investigate your running app. For more information, see [Wix Detox: Debugging with Detox REPL](https://wix.github.io/Detox/docs/guide/detox-repl)
 
@@ -323,18 +344,18 @@ The `ios-regression.yml` workflow provides automated testing with a multi-stage 
 * Click on "Run workflow". 
 * Under "Use workflow from:" dropdown, you can select your branch you want to test against. 
 * Which tests do you want to run? The default "all"? Or was there a particular test scenario you wanted? 
-* Which device do you want to run the tests on? An iPhone 16, 16 Pro, or a 16 Pro Max? An iPad mini, iPad Ait, ot iPad Pro? 
+* Which device do you want to run the tests on? An iPhone 16, 16 Pro, or a 16 Pro Max? An iPad mini, iPad Air, or iPad Pro? 
 
-You can also set up in our Buid & Test iOS GitHub Actions workflow with the [Detox CLI](https://wix.github.io/Detox/docs/19.x/api/detox-cli/) (command-line interface) which Detox artifacts you wish to capture ([See Detox / Artifacts](https://wix.github.io/Detox/docs/config/artifacts/)): 
+You can also set up in our Build & Test iOS GitHub Actions workflow with the [Detox CLI](https://wix.github.io/Detox/docs/19.x/api/detox-cli/) (command-line interface) which Detox artifacts you wish to capture ([See Detox / Artifacts](https://wix.github.io/Detox/docs/config/artifacts/)): 
 * What log levels do you want to set? From most to least verbose, we have: trace, debug, verbose, info, warn, error, or fatal?
 * How do you want to capture test logs? failing, all, or none?
 * How do you want to capture screenshots? failing, all, or none?
 * What about capturing videos? failing, all, or none?  
 * Do you want to add [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) performance (iOS only): none or all? 
 
-==> That is the last choice you need to make. Hit "Run Workflow"
+==> That is the last choice you need to make. Hit "Run Workflow".
 
-It takes 30 minutes to build the Detox app and 10 minutes to set up the simulator run all tests. 
+It takes 30 minutes to build the Detox app and 10 minutes to set up the simulator and run all tests. 
 
 ### Pipeline Stages
 1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for default iPhone 16 Pro simulator
@@ -377,7 +398,7 @@ allure open allure-report
 ```
 
 **CI/CD Pipeline:**
-View live reports at https://tjmaher.github.io/detox-demo/ios/
+View live reports at: https://tjmaher.github.io/detox-demo/ios/
 
 The GitHub Actions workflow automatically runs tests, captures failure artifacts, and publishes reports to GitHub Pages for easy access to test results and debugging
 
@@ -421,7 +442,7 @@ yarn start --port 8082
 ```
 ## Detox Instruments
 
-DetoxInstruments, part of the [Wix Incubator](https://github.com/wix-incubator/DetoxInstruments), is a macOS performance profiling tool that can run from Wix for iOS apps. It captures CPU, memory, disk, network, and FPS metrics during app execution.
+DetoxInstruments, part of the [Wix Incubator](https://github.com/wix-incubator/DetoxInstruments), is a macOS performance profiling tool from Wix for iOS apps. It captures CPU, memory, disk, network, and FPS metrics during app execution.
 
 ### Key Features
 * Visual timeline of performance metrics

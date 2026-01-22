@@ -69,7 +69,7 @@ on:
         description: 'Capture screenshots?'
         required: true
         type: choice
-        default: 'failing'
+        default: 'all'
         options:
           - 'failing'
           - 'all'
@@ -78,7 +78,7 @@ on:
         description: 'Capture video?'
         required: true
         type: choice
-        default: 'none'
+        default: 'all'
         options:
           - 'none'
           - 'failing'
@@ -258,18 +258,32 @@ jobs:
           
           # Wait for Metro to be ready with healthcheck
           echo "Waiting for Metro bundler to start..."
-          sleep 10
+          sleep 15
           
           # Verify Metro is responding
           echo "Checking Metro health..."
-          for i in {1..30}; do
+          for i in {1..60}; do
             if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is ready!"
               break
             fi
-            echo "Waiting for Metro... attempt $i/30"
-            sleep 1
+            echo "Waiting for Metro... attempt $i/60"
+            sleep 2
           done
+          
+          # Pre-generate the initial bundle before tests start
+          echo "Pre-generating initial JavaScript bundle..."
+          curl -s "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" > /dev/null || true
+          echo "Waiting for bundle generation to complete..."
+          sleep 20
+          
+          # Verify bundle is available
+          echo "Verifying bundle availability..."
+          if curl -s "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then
+            echo "✅ Bundle is ready!"
+          else
+            echo "⚠️  Bundle may not be fully ready, but continuing..."
+          fi
           
           # List available simulators
           echo "Available iOS simulators:"
@@ -284,11 +298,10 @@ jobs:
             echo "Booting $DEVICE_NAME..."
             xcrun simctl boot "$SIMULATOR_ID" || echo "Simulator already booted"
             
-            # Wait longer and verify simulator is actually ready
+            # Wait for simulator to be fully booted
             echo "Waiting for simulator to boot completely..."
             sleep 10
             
-            # Wait for simulator to be fully booted
             until xcrun simctl bootstatus "$SIMULATOR_ID" | grep -q "Device already booted"; do
               echo "Waiting for simulator to finish booting..."
               sleep 2
@@ -348,7 +361,7 @@ jobs:
           echo "Stopping Metro bundler..."
           kill $METRO_PID || true
           
-          echo "Detox tests completed on iPhone 16 Pro"
+          echo "Detox tests completed on $DEVICE_NAME"
         env:
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true

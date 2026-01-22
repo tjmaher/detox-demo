@@ -10,9 +10,9 @@ permissions:
 # Define default artifact capture settings for entire workflow
 env:
   DEFAULT_LOG_LEVEL: 'info'
-  DEFAULT_CAPTURE_LOGS: 'all'
-  DEFAULT_CAPTURE_SCREENSHOTS: 'all'
-  DEFAULT_CAPTURE_VIDEO: 'all'
+  DEFAULT_CAPTURE_LOGS: 'failing'
+  DEFAULT_CAPTURE_SCREENSHOTS: 'failing'
+  DEFAULT_CAPTURE_VIDEO: 'failing'
   DEFAULT_RECORD_PERFORMANCE: 'none'
 
 on:
@@ -69,7 +69,7 @@ on:
         description: 'Capture test logs?'
         required: true
         type: choice
-        default: 'all'
+        default: 'failing'
         options:
           - 'failing'
           - 'all'
@@ -78,7 +78,7 @@ on:
         description: 'Capture screenshots?'
         required: true
         type: choice
-        default: 'all'
+        default: 'failing'
         options:
           - 'failing'
           - 'all'
@@ -87,7 +87,7 @@ on:
         description: 'Capture video?'
         required: true
         type: choice
-        default: 'all'
+        default: 'failing'
         options:
           - 'none'
           - 'failing'
@@ -401,7 +401,35 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: detox-test-results-${{ github.run_id }}
+          path: .
         continue-on-error: true
+
+      - name: Verify downloaded artifacts
+        if: always()
+        run: |
+          echo "=== Verifying downloaded test artifacts ==="
+          echo "Current directory structure:"
+          ls -la
+          
+          echo ""
+          echo "Checking for artifacts directory:"
+          if [ -d "artifacts" ]; then
+            echo "✅ artifacts/ directory found"
+            ls -la artifacts/
+            find artifacts -type f | head -20
+          else
+            echo "❌ artifacts/ directory NOT found"
+          fi
+          
+          echo ""
+          echo "Checking for allure-results directory:"
+          if [ -d "allure-results" ]; then
+            echo "✅ allure-results/ directory found"
+            ls -la allure-results/
+            echo "JSON files: $(find allure-results -name '*.json' -type f | wc -l)"
+          else
+            echo "❌ allure-results/ directory NOT found"
+          fi
 
       - name: Checkout GitHub Pages branch for history
         uses: actions/checkout@v4
@@ -420,10 +448,10 @@ jobs:
             echo "Found previous history, copying to allure-results..."
             mkdir -p allure-results/history
             cp -r gh-pages-history/ios/history/* allure-results/history/ || true
-            echo "History copied successfully"
+            echo "✅ History copied successfully"
             ls -la allure-results/history/
           else
-            echo "No previous history found, this will be the first report"
+            echo "ℹ️  No previous history found, this will be the first report"
           fi
 
       - name: Setup Allure
@@ -439,70 +467,96 @@ jobs:
           # DEBUG: Check what was actually created
           echo "=== Checking for allure-results after test execution ==="
           if [ -d "allure-results" ]; then
-            echo "allure-results directory exists"
+            echo "✅ allure-results directory exists"
             ls -laR allure-results/
             echo "JSON file count: $(find allure-results -name '*.json' -type f | wc -l)"
           else
-            echo "ERROR: allure-results directory does NOT exist!"
+            echo "⚠️  allure-results directory does NOT exist - creating it"
+            mkdir -p allure-results
           fi
 
       - name: Attach Detox artifacts to Allure results
         if: always()
         run: |
-          echo "Processing Detox artifacts for Allure report..."
+          echo "=== Processing Detox artifacts for Allure report ==="
           
-          # Create attachments directory in allure-results
+          # Create attachments directory
           mkdir -p allure-results/attachments
           
-          if [ -d "artifacts" ]; then
-            echo "Found artifacts directory, processing files..."
-            
-            # Copy screenshots (captured based on user selection)
-            if find artifacts -name "*.png" -type f | grep -q .; then
-              echo "Copying screenshots to Allure attachments..."
-              find artifacts -name "*.png" -type f -exec cp {} allure-results/attachments/ \;
-              SCREENSHOT_COUNT=$(find allure-results/attachments -name "*.png" -type f | wc -l)
-              echo "✅ Copied $SCREENSHOT_COUNT screenshots"
-            else
-              echo "No screenshots found (capture_screenshots: ${{ github.event.inputs.capture_screenshots || 'failing' }})"
-            fi
-            
-            # Copy videos (captured based on user selection)
-            if find artifacts -name "*.mp4" -type f | grep -q .; then
-              echo "Copying videos to Allure attachments..."
-              find artifacts -name "*.mp4" -type f -exec cp {} allure-results/attachments/ \;
-              VIDEO_COUNT=$(find allure-results/attachments -name "*.mp4" -type f | wc -l)
-              echo "✅ Copied $VIDEO_COUNT videos"
-            else
-              echo "No videos found (capture_video: ${{ github.event.inputs.capture_video || 'none' }})"
-            fi
-            
-            # Copy log files (captured based on user selection)
-            if find artifacts -name "*.log" -type f | grep -q .; then
-              echo "Copying logs to Allure attachments..."
-              find artifacts -name "*.log" -type f -exec cp {} allure-results/attachments/ \;
-              LOG_COUNT=$(find allure-results/attachments -name "*.log" -type f | wc -l)
-              echo "✅ Copied $LOG_COUNT log files"
-            else
-              echo "No log files found (capture_logs: ${{ github.event.inputs.capture_logs || 'failing' }})"
-            fi
-            
-            # Copy performance traces (iOS only, captured based on user selection)
-            if find artifacts -name "*.trace" -type f | grep -q .; then
-              echo "Copying performance traces to Allure attachments..."
-              find artifacts -name "*.trace" -type f -exec cp {} allure-results/attachments/ \;
-              TRACE_COUNT=$(find allure-results/attachments -name "*.trace" -type f | wc -l)
-              echo "✅ Copied $TRACE_COUNT performance traces"
-            else
-              echo "No performance traces found (record_performance: ${{ github.event.inputs.record_performance || 'none' }})"
-            fi
-            
+          # Check if artifacts directory exists
+          if [ ! -d "artifacts" ]; then
+            echo "⚠️  No artifacts directory found"
+            echo "This may occur if:"
+            echo "  - Tests didn't run"
+            echo "  - Artifacts weren't captured (check capture settings)"
+            echo "  - Artifact upload/download failed"
             echo ""
-            echo "=== Artifact Summary ==="
-            ls -lh allure-results/attachments/ 2>/dev/null || echo "No attachments directory created"
-            echo "Total attachment size: $(du -sh allure-results/attachments/ 2>/dev/null | cut -f1 || echo '0')"
+            echo "Current directory contents:"
+            ls -la
+            exit 0
+          fi
+          
+          echo "✅ Found artifacts directory"
+          echo "Processing artifact files..."
+          echo ""
+          
+          # Track what we find
+          FOUND_ANY=false
+          
+          # Copy screenshots
+          if find artifacts -name "*.png" -type f 2>/dev/null | grep -q .; then
+            echo "📸 Copying screenshots to Allure attachments..."
+            find artifacts -name "*.png" -type f -exec cp {} allure-results/attachments/ \;
+            SCREENSHOT_COUNT=$(find allure-results/attachments -name "*.png" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Copied $SCREENSHOT_COUNT screenshots"
+            FOUND_ANY=true
           else
-            echo "⚠️  No artifacts directory found - tests may not have run or artifacts were not captured"
+            echo "   ℹ️  No screenshots (capture_screenshots: ${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }})"
+          fi
+          
+          # Copy videos
+          if find artifacts -name "*.mp4" -type f 2>/dev/null | grep -q .; then
+            echo "🎥 Copying videos to Allure attachments..."
+            find artifacts -name "*.mp4" -type f -exec cp {} allure-results/attachments/ \;
+            VIDEO_COUNT=$(find allure-results/attachments -name "*.mp4" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Copied $VIDEO_COUNT videos"
+            FOUND_ANY=true
+          else
+            echo "   ℹ️  No videos (capture_video: ${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }})"
+          fi
+          
+          # Copy log files
+          if find artifacts -name "*.log" -type f 2>/dev/null | grep -q .; then
+            echo "📋 Copying logs to Allure attachments..."
+            find artifacts -name "*.log" -type f -exec cp {} allure-results/attachments/ \;
+            LOG_COUNT=$(find allure-results/attachments -name "*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Copied $LOG_COUNT log files"
+            FOUND_ANY=true
+          else
+            echo "   ℹ️  No logs (capture_logs: ${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }})"
+          fi
+          
+          # Copy performance traces (iOS only)
+          if find artifacts -name "*.trace" -type f 2>/dev/null | grep -q .; then
+            echo "📊 Copying performance traces to Allure attachments..."
+            find artifacts -name "*.trace" -type f -exec cp {} allure-results/attachments/ \;
+            TRACE_COUNT=$(find allure-results/attachments -name "*.trace" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Copied $TRACE_COUNT performance traces"
+            FOUND_ANY=true
+          else
+            echo "   ℹ️  No traces (record_performance: ${{ github.event.inputs.record_performance || env.DEFAULT_RECORD_PERFORMANCE }})"
+          fi
+          
+          echo ""
+          echo "=== Artifact Summary ==="
+          if [ "$FOUND_ANY" = true ]; then
+            echo "Attachments directory contents:"
+            ls -lh allure-results/attachments/ 2>/dev/null || echo "Empty"
+            TOTAL_SIZE=$(du -sh allure-results/attachments/ 2>/dev/null | cut -f1 || echo '0')
+            echo "Total attachment size: $TOTAL_SIZE"
+          else
+            echo "⚠️  No artifacts were captured for this test run"
+            echo "This is expected when tests pass and capture settings are 'failing'"
           fi
 
       - name: Generate Allure executor information

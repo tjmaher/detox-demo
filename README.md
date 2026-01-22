@@ -196,7 +196,7 @@ detox-demo/
 └── README.md                    
 ```
 
-## Setup & Installation
+## Run DetoxDemo Locally:
 
 ### Prerequisites
 - Node.js (>= 20)
@@ -204,6 +204,12 @@ detox-demo/
 - iOS Simulator (such as iPhone 16 Pro, used in this project)
 - React Native development environment ([Setup Guide](https://reactnative.dev/docs/set-up-your-environment))
 - Homebrew (for macOS dependencies)
+
+### Download DetoxDemo
+
+* Go to **<>Code** => Select "HTTPS" and copy the URL.
+* Open your Mac Terminal, find the subdirectory where you wish to install code, and: git clone https://github.com/tjmaher/detox-demo.git
+* Change the directory to where DetoxDemo was installed: cd detox-demo
 
 ### Install Dependencies
 
@@ -215,10 +221,14 @@ yarn install
 bundle install
 ```
 
-### iOS Setup
+### Setup for iOS
+
+[Set Up Your React Native Environment](https://reactnative.dev/docs/set-up-your-environment) before proceeding.
 
 **Install [CocoaPods](https://cocoapods.org/) dependencies:**
-* cd ios && pod install && cd ..
+* Go into the ios directory, install pod, then go back to the root directory: cd ios && pod install && cd ..
+
+For more information, visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
 
 **Install [Detox CLI](https://wix.github.io/Detox/docs/19.x/api/detox-cli/) globally:**
 * yarn global add detox-cli
@@ -226,16 +236,6 @@ bundle install
 **Install [applesimutils](https://github.com/wix/AppleSimulatorUtils), for Detox iOS testing:**
 * brew tap wix/brew
 * brew install applesimutils
-
-
-### Detox Setup
-```bash
-# Build the iOS app for testing
-yarn detox:build:ios
-
-# Run Detox tests on iPhone 16 Pro simulator
-yarn detox:test:ios
-```
 
 ### Allure Reporting Setup (Optional)
 ```bash
@@ -247,20 +247,17 @@ allure generate allure-results --clean -o allure-report
 allure open allure-report
 ```
 
-### Verify Installation
-You can also run the complete test suite to verify everything is working, via shortcuts I placed in the package.json:
-```bash
-# Build and test in one command
-yarn detox:ios
-```
+### Build the DetoxDemo app
 
-You should see your app running in iOS Simulator with tests.
+To Build the app, you could do it the long way in Detox CLI:
+* detox build --configuration ios.sim.debug
 
-# Getting Started
+Or you can use the shortcuts set up in the package.json: 
+* yarn detox:build:ios
 
-[Set Up Your React Native Environment](https://reactnative.dev/docs/set-up-your-environment) before proceeding.
+### Run the Tests
 
-## Step 1: Start Metro
+**Step 1: Start Metro**
 
 Run **Metro**, the JavaScript build tool for React Native.
 
@@ -271,49 +268,18 @@ To start the Metro dev server, run:
 yarn start
 
 ```
+**Step 2: Run the Tests Locally**
 
-## Step 2: Build your app
-
-Open a new terminal from the root of your React Native project.
-
-### iOS
-
-For iOS, install CocoaPods dependencies:
-
-Run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Build a version of the app with Detox embedded:
-
-```sh
-detox build --configuration ios.sim.debug
-```
-
-For more information, visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-## Step 3: Run the Tests Locally
-
-Run all the tests: 
+Run all the tests using Detox CLI: 
 * detox test --configuration ios.sim.debug
 
 Run only the LoginPage tests in login.test.ts: 
 * detox test --configuration ios.sim.debug e2e/login.test.ts
 
 ... Or you can run shortcuts to run the tests, found in the package.json file in the root directory such as:
-
 * yarn detox:test:ios
  
- ```sh
- "detox:build:ios": "detox build --configuration ios.sim.debug",
- "detox:test:ios": "detox test --configuration ios.sim.debug",
- "detox:ios": "yarn run detox:build:ios && yarn run detox:test:ios"
-```
-
-To run one of the shortcuts, add the command "yarn" plus the shortcut:
-* Run all the tests on an iOS emulator in debug mode: yarn detox:test:ios
+### Optional: Debug using Detox REPL
 
 Detox has a REPL mode, a Run - Evaluate - Print Loop where you can investigate your running app. For more information, see [Wix Detox: Debugging with Detox REPL](https://wix.github.io/Detox/docs/guide/detox-repl)
 
@@ -329,6 +295,7 @@ Some things you can do in REPL Mode:
 .help      Print this help message
 ```
 
+### View the Reults
 
 You should see your new app running in iOS Simulator.
 

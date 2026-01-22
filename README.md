@@ -13,13 +13,22 @@ DetoxDemo is a working React Native demo app that gives examples of:
 * A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
 * Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
 
-[Build & Test Workflow](https://github.com/tjmaher/detox-demo/actions/runs/21231553151/workflow) demonstrates:
-* Mobile Automated Regression Test Suite set up to be automatically kicked off via pushed code, pull requests, or cron job
-* Developers manually kick off tests against their new branch of code before merging, or against the main branch
-* Tests run on various iPhone and iPad simulators 
-* Artifacts customized such as log levels, screenshots, videos, and Detox Instrument performance
-* Detox CLI set up to run a test suite with various log levels, screenshots, videos, and Detox Instrument performance
-* Homebrew, RubyGems, Cocoapods, Node.js, Applesimutils can be configured
+Want to kick off a job to run all the Login tests in the CI/ CD platform using our GitHub Actions workflow?
+* Go to Actions -> [View all Workflows](https://github.com/tjmaher/detox-demo/actions)
+* Under the **Actions** column to the left, select [Build & Test iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml)
+* Select the **\[Run workflow\]** button to see all the choices I set up in the [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml) configuration file under the on: workflow_dispatch -> inputs
+* Say you were a developer that wanted to test out their JIRA-123 branch code before merging, under "Use workflow from" they could choose branch JIRA-123 here instead of running against the main branch.
+* Which test suite would you like to run? Login? SecureArea? Default is "all".
+* Which iPhone 16 would you like to run the tests on? Regular iPhone 16, Pro, or Pro Max? Or maybe an iPad Mini, Air, or Pro? 
+* What log level? Select any range from the very verbose "trace", to throw alerts if things are "fatal". Default is "info".
+* What level of artifacts do you want to capture for logs, screenshots, or videos? All, just failing, or none?
+* Do you want to run performance testing with Detox Instruments? We have that option! Still looking how the Wix Incubator's [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) works with CI/CD. 
+* Or you can just scroll down to the bottom and select **\[Run Workflow\]** and kick off the default values set up in [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml)
+* A new "Build & Test iOS" run will be created. Feel free to click into the run to see it run through the build -> test -> publish-allure-reports -> cleanup stages where you can see all Homebrew, RubyGems, Cocoapods, Node.js, and Applesimutils are configured and run.
+* If you click into the "build" stage, you can see it work through tasks such as "Set up job", "Checkout repository", "Setup Homebrew", "Setup Ruby", "Cache Homebrew and RubyGems", etc. It takes 30 minutes for a Detox-embedded build to be generated. 
+* When everything is finished, you can see in the run downloadable artifacts such as videos, logs, screenshots, and the allure-report. 
+* You can also view the Allure Reports at [https://tjmaher.github.io/detox-demo/ios/]
+
 
 <div align="center">
 
@@ -330,30 +339,35 @@ You should see your new app running in iOS Simulator.
     Snapshots:   0 total
     Time:        27.516 s, estimated 39 s
   ```  
-# Test Branch Code with GitHub Actions as a CI/ CD platform
 
-Let's say a developer wants to know if the changes they made cause a regression, i.e. break what was once fixed, regressing the product to a more broken state BEFORE their changes are moved into the main branch... They can use a GitHub Actions workflow set up to run on an iPhone 16 Pro emulator. 
+## Test Reports
 
-**GitHub Actions** is GitHub's built-in CI/CD (Continuous Integration/Continuous Deployment) platform that automates your software development workflows directly within your GitHub repository.
+At the end of each test, a test report is outputed to the console log. A test report looks like a manual test plan a software tester can use to debug any failures:
 
-The `ios-regression.yml` workflow provides automated testing with a multi-stage pipeline.
+```
+==Secure Area Flow:  Verify all Secure Area elements==
+ 
+LoginPage: Verifying Page is Loaded
+LoginPage: Logging in as tomsmith / SuperSecretPassword!
+ 
+LoginPage: Verifying Page is Loaded
+  * Entering Username: tomsmith
+  * Entering Password: SuperSecretPassword!
+  * Tapping Login Button
+ 
+SecureArea: Verifying Page is Loaded
+  * Verifying Heading: 'Secure Area'
+  * Verifying Body Text
+  * Expected Text: Welcome to the Secure Area. When you are done click logout below.
+  * Verifying Success Banner
+  * Expected Text: You logged into a secure area!
+  * Verifying Logout Button is Visible
+ ================================
+ ```
 
-## How to Kick off Tests
+## More about the GitHub Actions Workflow CI/CD Pipeline 
 
-* Go to the [Build & Test Nightly iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) workflow in GitHub Actions. 
-* Click on "Run workflow". 
-* Under "Use workflow from:" dropdown, you can select your branch you want to test against. 
-* Which tests do you want to run? The default "all"? Or was there a particular test scenario you wanted? 
-* Which device do you want to run the tests on? An iPhone 16, 16 Pro, or a 16 Pro Max? An iPad mini, iPad Air, or iPad Pro? 
-
-You can also set up in our Build & Test iOS GitHub Actions workflow with the [Detox CLI](https://wix.github.io/Detox/docs/19.x/api/detox-cli/) (command-line interface) which Detox artifacts you wish to capture ([See Detox / Artifacts](https://wix.github.io/Detox/docs/config/artifacts/)): 
-* What log levels do you want to set? From most to least verbose, we have: trace, debug, verbose, info, warn, error, or fatal?
-* How do you want to capture test logs? failing, all, or none?
-* How do you want to capture screenshots? failing, all, or none?
-* What about capturing videos? failing, all, or none?  
-* Do you want to add [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) performance (iOS only): none or all? 
-
-==> That is the last choice you need to make. Hit "Run Workflow".
+The GitHub Actions Workflow Pipeline is configured by [.github/workflows/ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml).
 
 It takes 30 minutes to build the Detox app and 10 minutes to set up the simulator and run all tests. 
 

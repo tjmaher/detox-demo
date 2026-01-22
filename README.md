@@ -20,7 +20,7 @@ Want to kick off a job to run all the Login tests in the CI/ CD platform using o
 * Say you were a developer that wanted to test out their JIRA-123 branch code before merging, under "Use workflow from" they could choose branch JIRA-123 here instead of running against the main branch.
 * Which test suite would you like to run? Login? SecureArea? Default is "all".
 * Which iPhone 16 would you like to run the tests on? Regular iPhone 16, Pro, or Pro Max? Or maybe an iPad Mini, Air, or Pro? 
-* What log level? Select any range from the very verbose "trace", to throw alerts if things are "fatal". Default is "info".
+* What log level? Select any range from the very verbose "trace", to throwing alerts only if things are "fatal". Default is "info".
 * What level of artifacts do you want to capture for logs, screenshots, or videos? All, just failing, or none?
 * Do you want to run performance testing with Detox Instruments? We have that option! Still looking how the Wix Incubator's [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) works with CI/CD. 
 * Or you can just scroll down to the bottom and select **\[Run Workflow\]** and kick off the default values set up in [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml)
@@ -29,6 +29,7 @@ Want to kick off a job to run all the Login tests in the CI/ CD platform using o
 * When everything is finished, you can see in the run downloadable artifacts such as videos, logs, screenshots, and the allure-report. 
 * You can also view the Allure Reports at [https://tjmaher.github.io/detox-demo/ios/]
 
+## Screenshots of LoginPage and SecureArea screens
 
 <div align="center">
 
@@ -53,6 +54,8 @@ Want to kick off a job to run all the Login tests in the CI/ CD platform using o
 
 </div>
 
+## About DetoxDemo
+
 T.J. Maher will be using DetoxDemo to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
 
 The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. first started teaching himself automation development, writing Selenium + Java tests against that website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
@@ -61,13 +64,15 @@ DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-en
 
 DetoxDemo, the app under test for this project, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
 
+## About the Author
+
 T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 testing the SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. 
 
 T.J. Maher has been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
 
 If you find this project helpful, feel free to copy it and use it for your own education. Like it? Give a shout out and tag me [on LinkedIn](https://www.linkedin.com/in/tjmaher1/)! 
 
-## Features
+## DetoxDemo Features
 
 ### Login Screen
 - **Heading**: "Login Page"

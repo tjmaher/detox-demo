@@ -5,7 +5,15 @@ permissions:
   packages: read
   id-token: write
   pages: write 
-  actions: read 
+  actions: read
+
+# Define default artifact capture settings for entire workflow
+env:
+  DEFAULT_LOG_LEVEL: 'info'
+  DEFAULT_CAPTURE_LOGS: 'all'
+  DEFAULT_CAPTURE_SCREENSHOTS: 'all'
+  DEFAULT_CAPTURE_VIDEO: 'all'
+  DEFAULT_RECORD_PERFORMANCE: 'none'
 
 on:
   # Run all tests when changes are pushed onto the main branch
@@ -16,7 +24,8 @@ on:
   pull_request:
     branches: [ main ]
 
-  # Run all tests every day at 10:00 PM EST  # schedule:
+  # Run all tests every day at 10:00 PM EST
+  # schedule:
   #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
   
   workflow_dispatch:
@@ -60,7 +69,7 @@ on:
         description: 'Capture test logs?'
         required: true
         type: choice
-        default: 'failing'
+        default: 'all'
         options:
           - 'failing'
           - 'all'
@@ -377,7 +386,7 @@ jobs:
             allure-results/
           retention-days: 7
 
-  # Stage 3: Generate Allure Reports, only if tests complete)
+  # Stage 3: Generate Allure Reports, only if tests complete
   publish-allure-report:
     runs-on: macos-latest
     needs: [build, test]
@@ -437,6 +446,149 @@ jobs:
             echo "ERROR: allure-results directory does NOT exist!"
           fi
 
+      - name: Attach Detox artifacts to Allure results
+        if: always()
+        run: |
+          echo "Processing Detox artifacts for Allure report..."
+          
+          # Create attachments directory in allure-results
+          mkdir -p allure-results/attachments
+          
+          if [ -d "artifacts" ]; then
+            echo "Found artifacts directory, processing files..."
+            
+            # Copy screenshots (captured based on user selection)
+            if find artifacts -name "*.png" -type f | grep -q .; then
+              echo "Copying screenshots to Allure attachments..."
+              find artifacts -name "*.png" -type f -exec cp {} allure-results/attachments/ \;
+              SCREENSHOT_COUNT=$(find allure-results/attachments -name "*.png" -type f | wc -l)
+              echo "✅ Copied $SCREENSHOT_COUNT screenshots"
+            else
+              echo "No screenshots found (capture_screenshots: ${{ github.event.inputs.capture_screenshots || 'failing' }})"
+            fi
+            
+            # Copy videos (captured based on user selection)
+            if find artifacts -name "*.mp4" -type f | grep -q .; then
+              echo "Copying videos to Allure attachments..."
+              find artifacts -name "*.mp4" -type f -exec cp {} allure-results/attachments/ \;
+              VIDEO_COUNT=$(find allure-results/attachments -name "*.mp4" -type f | wc -l)
+              echo "✅ Copied $VIDEO_COUNT videos"
+            else
+              echo "No videos found (capture_video: ${{ github.event.inputs.capture_video || 'none' }})"
+            fi
+            
+            # Copy log files (captured based on user selection)
+            if find artifacts -name "*.log" -type f | grep -q .; then
+              echo "Copying logs to Allure attachments..."
+              find artifacts -name "*.log" -type f -exec cp {} allure-results/attachments/ \;
+              LOG_COUNT=$(find allure-results/attachments -name "*.log" -type f | wc -l)
+              echo "✅ Copied $LOG_COUNT log files"
+            else
+              echo "No log files found (capture_logs: ${{ github.event.inputs.capture_logs || 'failing' }})"
+            fi
+            
+            # Copy performance traces (iOS only, captured based on user selection)
+            if find artifacts -name "*.trace" -type f | grep -q .; then
+              echo "Copying performance traces to Allure attachments..."
+              find artifacts -name "*.trace" -type f -exec cp {} allure-results/attachments/ \;
+              TRACE_COUNT=$(find allure-results/attachments -name "*.trace" -type f | wc -l)
+              echo "✅ Copied $TRACE_COUNT performance traces"
+            else
+              echo "No performance traces found (record_performance: ${{ github.event.inputs.record_performance || 'none' }})"
+            fi
+            
+            echo ""
+            echo "=== Artifact Summary ==="
+            ls -lh allure-results/attachments/ 2>/dev/null || echo "No attachments directory created"
+            echo "Total attachment size: $(du -sh allure-results/attachments/ 2>/dev/null | cut -f1 || echo '0')"
+          else
+            echo "⚠️  No artifacts directory found - tests may not have run or artifacts were not captured"
+          fi
+
+      - name: Generate Allure executor information
+        if: always()
+        run: |
+          mkdir -p allure-results
+          cat > allure-results/executor.json << EOF
+          {
+            "name": "GitHub Actions",
+            "type": "github",
+            "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "buildOrder": ${{ github.run_number }},
+            "buildName": "iOS Detox Tests #${{ github.run_number }}",
+            "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/ios/",
+            "reportName": "Allure Report"
+          }
+          EOF
+          
+          echo "Executor information created:"
+          cat allure-results/executor.json
+
+      - name: Generate Allure environment properties
+        if: always()
+        run: |
+          mkdir -p allure-results
+          cat > allure-results/environment.properties << EOF
+          # Test Environment Configuration
+          Platform=iOS
+          Device=${{ github.event.inputs.device || 'iPhone 16 Pro' }}
+          Test.Suite=${{ github.event.inputs.test_suite || 'all' }}
+          Node.Version=$(node --version)
+          Detox.Version=$(yarn list --pattern detox --depth=0 | grep detox@ | sed 's/.*detox@//')
+          React.Native.Version=$(node -p "require('./package.json').dependencies['react-native']")
+          
+          # Test Configuration
+          Log.Level=${{ github.event.inputs.logger_level || env.DEFAULT_LOG_LEVEL }}
+          Capture.Logs=${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}
+          Capture.Screenshots=${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}
+          Capture.Video=${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}
+          Record.Performance=${{ github.event.inputs.record_performance || env.DEFAULT_RECORD_PERFORMANCE }}
+          
+          # CI/CD Information
+          Workflow.Run.ID=${{ github.run_id }}
+          Workflow.Run.Number=${{ github.run_number }}
+          Workflow.Attempt=${{ github.run_attempt }}
+          Trigger=${{ github.event_name }}
+          Branch=${{ github.ref_name }}
+          Commit.SHA=${{ github.sha }}
+          Commit.Author=${{ github.actor }}
+          Repository=${{ github.repository }}
+          Run.Date=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+          
+          echo "Environment properties created:"
+          cat allure-results/environment.properties
+
+      - name: Generate Allure categories
+        if: always()
+        run: |
+          mkdir -p allure-results
+          cat > allure-results/categories.json << 'EOF'
+          [
+            {
+              "name": "Login Failures",
+              "matchedStatuses": ["failed"],
+              "messageRegex": ".*login.*"
+            },
+            {
+              "name": "Timeout Issues",
+              "matchedStatuses": ["failed", "broken"],
+              "messageRegex": ".*timeout.*"
+            },
+            {
+              "name": "Element Not Found",
+              "matchedStatuses": ["failed"],
+              "messageRegex": ".*not found.*|.*unable to find.*"
+            },
+            {
+              "name": "Infrastructure Issues",
+              "matchedStatuses": ["broken"],
+              "messageRegex": ".*simulator.*|.*build.*|.*metro.*"
+            }
+          ]
+          EOF
+
       - name: Generate Allure report from Detox results
         run: |
           echo "Generating Allure report with history..."
@@ -471,7 +623,7 @@ jobs:
           destination_dir: ios
           keep_files: true
 
-  # Stage 4: Cleanup (Always runs)
+  # Stage 4: Cleanup
   cleanup:
     runs-on: macos-latest
     needs: [build, test, publish-allure-report]

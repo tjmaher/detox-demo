@@ -24,6 +24,11 @@ module.exports = {
       type: 'ios.app',
       binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/DetoxDemo.app',
       build: 'xcodebuild -workspace ios/DetoxDemo.xcworkspace -scheme DetoxDemo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build'
+    },
+    'android.debug': {
+      type: 'android.apk',
+      binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
+      build: 'cd android && gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..'
     }
   },
   
@@ -33,6 +38,12 @@ module.exports = {
       device: {
         type: 'iPhone 16 Pro'
       }
+    },
+    emulator: {
+      type: 'android.emulator',
+      device: {
+        avdName: 'Pixel_5_API_33'
+      }
     }
   },
   
@@ -40,6 +51,10 @@ module.exports = {
     'ios.sim.debug': {
       device: 'simulator',
       app: 'ios.debug'
+    },
+    'android.emu.debug': {
+      device: 'emulator',
+      app: 'android.debug'
     }
   }
 };

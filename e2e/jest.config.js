@@ -1,40 +1,58 @@
 /** @type {import('@jest/types').Config.InitialOptions} */
+const path = require('path');
+
+// jest-allure2-reporter has ESM compatibility issues on Windows
+// ESM (ECMAScript Module) compatibility issues occur when a package expects ES modules (import/export) but the environment expects CommonJS (require/module.exports).
+// On Windows, jest-allure2-reporter and Detox/Allure integrations may fail to load ESM modules, causing errors like "Cannot use import statement outside a module".
+// See:
+//   https://github.com/allure-framework/allure-js/issues/352
+//   https://github.com/wix-incubator/detox-allure2-adapter/issues/7
+
+const isWindows = process.platform === 'win32';
+
+const reporters = ['detox/runners/jest/reporter'];
+
+// Only add Allure reporter on non-Windows platforms due to ESM issues
+if (!isWindows) {
+  reporters.push([
+    'jest-allure2-reporter',
+    {
+      extends: 'detox-allure2-adapter/preset-allure',
+      resultsDir: 'allure-results',
+    },
+  ]);
+}
+
+const eventListeners = [];
+
+if (!isWindows) {
+  eventListeners.push([
+    'detox-allure2-adapter',
+    {
+      enabled: true,
+      deviceLogs: true,
+      deviceScreenshots: true,
+      deviceVideos: true,
+      deviceViewHierarchy: true,
+    },
+  ]);
+}
+
 module.exports = {
-  rootDir: '..',
+  rootDir: path.resolve(__dirname, '..'),
   testMatch: [
     '<rootDir>/e2e/login.test.ts',      // Run login first
     '<rootDir>/e2e/securearea.test.ts', // Then secure area
   ],
-  testTimeout: 120000,
+  testTimeout: 180000,
+  detectOpenHandles: true,
   maxWorkers: 1,
-  globalSetup: 'detox/runners/jest/globalSetup',
-  globalTeardown: 'detox/runners/jest/globalTeardown',
-  reporters: [
-    'detox/runners/jest/reporter',
-    [
-      'jest-allure2-reporter',
-      {
-        extends: 'detox-allure2-adapter/preset-allure',
-        resultsDir: 'allure-results',
-      },
-    ],
-  ],
-  testEnvironment: 'detox/runners/jest/testEnvironment',
+  globalSetup: require.resolve('detox/runners/jest/globalSetup'),
+  globalTeardown: require.resolve('detox/runners/jest/globalTeardown'),
+  reporters: reporters,
+  testEnvironment: require.resolve('detox/runners/jest/testEnvironment'),
   verbose: true,
   testEnvironmentOptions: {
-    eventListeners: [
-      'jest-metadata/environment-listener',
-      'jest-allure2-reporter/environment-listener',
-      [
-        'detox-allure2-adapter',
-        {
-          enabled: true,
-          deviceLogs: true,
-          deviceScreenshots: true,
-          deviceVideos: true,
-          deviceViewHierarchy: true,
-        },
-      ],
-    ],
+    eventListeners: eventListeners,
   },
 };

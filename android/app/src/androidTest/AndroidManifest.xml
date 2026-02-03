@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.detoxdemo.test">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
+
+    <!-- These activities are handled by androidx.test and need exported="true" for Android 12+ -->
+    <application
+        tools:replace="android:debuggable"
+        android:debuggable="true">
+
+        <!-- For androidx.test -->
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$BootstrapActivity"
+            android:exported="false" />
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity"
+            android:exported="false" />
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyFloatingActivity"
+            android:exported="false" />
+
+    </application>
+
+    <!-- Detox test runner - must be outside application tag -->
+    <instrumentation
+        android:name="com.wix.detox.runner.DetoxTestRunner"
+        android:targetPackage="com.detoxdemo"
+        android:handleProfiling="false"
+        android:functionalTest="false" />
+
+</manifest>

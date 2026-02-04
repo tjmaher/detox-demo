@@ -86,7 +86,8 @@ on:
           - 'failing'
           - 'all'
 
-# Note: Detox Instruments performance is iOS only
+# Note: Detox Instruments performance is iOS only, therefore this option is only in the GitHub Actions workflow
+#  for workflows/ios-regression.yml and not workflows/android-regression.yml
 
 jobs:
   build:
@@ -204,3 +205,14 @@ jobs:
         with:
           name: detox-artifacts
           path: artifacts/
+
+cleanup:
+  runs-on: ubuntu-latest
+  needs: [build, test]
+  if: always()
+  steps:
+    - name: Clean workspace
+      run: |
+        echo "Cleaning up Detox Demo Project workspace..."
+        rm -rf /tmp/detox* || true
+        echo "Cleanup completed"

@@ -136,6 +136,16 @@ detox test --configuration ios.sim.debug --loglevel info --artifacts-location ar
 
 Still in the Alpha stage, detox-allure2-adapter is a bridge between Detox (the mobile E2E testing framework) and jest-allure2-reporter, enables integration of Allure reporting with Detox tests, providing reports with screenshots, videos, device logs, and view hierarchies. The adapter replaces Detox's built-in artifacts manager to integrate with Allure's reporting capabilities.
 
+**Platform Support:**
+The Allure adapter is conditionally loaded based on two factors:
+- **Windows**: Disabled due to [ESM (ECMAScript Module)](https://nodejs.org/api/esm.html) compatibility issues with jest-allure2-reporter
+- **Environment Variable**: Only loads when the custom `DETOX_ENABLE_ALLURE` environment variable I have defined is true.
+
+This means:
+- **iOS CI** (`ios-regression.yml`): Sets `DETOX_ENABLE_ALLURE=true`, full Allure reporting with videokitten
+- **Android CI** (`android-regression.yml`): Does not set the variable, uses Detox's native artifact capture (videokitten/scrcpy has recording issues on Android emulators)
+- **Local Windows development**: Allure disabled regardless of env var due to ESM issues
+
 ### Allure Reports
 
 The Allure Framework, created as an internal product by Yandex that was open-sourced, and is now maintained by Qameta Software. According to an [article on Habr.com](https://habr.com/ru/companies/yandex/articles/232697/), published on Yandex's company blog in 2014, they wanted a way to make the automation results transparent not just to the automation engineers, but the entire testing team to make sure that the automation closely match the original manual tests. 
@@ -237,7 +247,207 @@ For more information, visit [CocoaPods Getting Started guide](https://guides.coc
 * brew tap wix/brew
 * brew install applesimutils
 
-### Allure Reporting Setup (Optional)
+### Setup for Android
+
+**This project follows the [official Detox Project Setup Guide for Android](https://wix.github.io/Detox/docs/introduction/project-setup).**
+
+**Summary of required steps:**
+1. Install prerequisites: JDK 11+, Android Studio, ANDROID_HOME env var
+2. Create an AVD in Android Studio (API 33+ recommended)
+3. Patch Gradle build scripts:
+   - Add Detox maven repo to `android/build.gradle`:
+     ```groovy
+     allprojects {
+       repositories {
+         maven { url "$rootDir/../node_modules/detox/Detox-android" }
+         // ...existing code...
+       }
+     }
+     ```
+   - In `android/app/build.gradle`, ensure:
+     - `testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'` in `defaultConfig`
+     - `testBuildType System.getProperty('testBuildType', 'debug')`
+     - Add Detox proguard rules to release build type:
+       ```groovy
+       proguardFile "${rootProject.projectDir}/../node_modules/detox/android/detox/proguard-rules-app.pro"
+       ```
+
+   **See official Detox documentation:**
+   - [Patch Gradle build scripts](https://wix.github.io/Detox/docs/introduction/project-setup/#patch-gradle-build-scripts)
+
+4. Create required files:
+   - `android/app/src/androidTest/java/com/detoxdemo/DetoxTest.java` (see official docs for template)
+   - `android/app/src/main/res/xml/network_security_config.xml` (see official docs for template)
+   - Reference the network config in `AndroidManifest.xml`:
+     ```xml
+     <application ... android:networkSecurityConfig="@xml/network_security_config">
+     ```
+
+   **See official Detox documentation:**
+   - [Create required files](https://wix.github.io/Detox/docs/introduction/project-setup/#create-required-files)
+     ```
+5. **Metro must be running before tests:**
+   - Start Metro: `yarn start` (in a separate terminal)
+6. Build and test:
+   - Build: `yarn detox:build:android`
+   - Test: `yarn detox:test:android`
+
+**Note:** iOS is the primary platform for this project. Android support is provided for local development and demonstration, following the official Detox documentation. Always refer to the [Detox Project Setup Guide](https://wix.github.io/Detox/docs/introduction/project-setup) for the most up-to-date instructions.
+
+## Setup for Windows 11 Local Development
+
+This guide covers setting up DetoxDemo for local development and testing on Windows 11.
+
+### System Requirements
+- Windows 11 (21H2 or later)
+- Node.js 20+ (LTS recommended)
+- Git for Windows
+- 16GB RAM minimum (8GB+ free)
+- 50GB+ free disk space (for Android SDK and emulator images)
+
+### Installation Steps
+
+**1. Install Node.js and Yarn**
+- Download and install Node.js 20+ LTS from https://nodejs.org/
+- Verify installation: `node --version` and `npm --version`
+- Install Yarn: `npm install --global yarn`
+- Verify Yarn: `yarn --version`
+
+**2. Install Ruby and CocoaPods** (for iOS development on macOS or cross-platform testing)
+- Download and install RubyInstaller from https://rubyinstaller.org/ (includes Ruby and Gem)
+- Verify Ruby: `ruby --version`
+- Install CocoaPods: `gem install cocoapods`
+- Verify CocoaPods: `pod --version`
+
+**3. Install Android SDK**
+- Download and install Android Studio from https://developer.android.com/studio
+- Run Android Studio and complete the setup wizard
+- Go to **File** → **Settings** → **Appearance & Behavior** → **System Settings** → **Android SDK**
+- Install Android SDK API level 33+ (required for Detox)
+- Add `ANDROID_HOME` environment variable:
+  ```powershell
+  $androidSdkPath = "$env:LOCALAPPDATA\Android\Sdk"
+  [Environment]::SetEnvironmentVariable("ANDROID_HOME", $androidSdkPath, "User")
+  ```
+- Restart PowerShell or reload the environment variables:
+  ```powershell
+  $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+  ```
+
+**4. Create Android Virtual Device (AVD)**
+- Open Android Studio
+- Go to **Tools** → **Device Manager**
+- Click **Create device**
+- Select a device (e.g., **Pixel 5** or **Pixel 8**)
+- Click **Next** and select **API 33** or higher
+- Click **Next** and name it (note the exact name)
+- Click **Finish**
+- Update `.detoxrc.js` with your AVD name if different from `Pixel_5_API_33`
+
+**5. Clone and Setup DetoxDemo**
+```powershell
+# Clone the repository
+git clone https://github.com/tjmaher/detox-demo.git
+cd detox-demo
+
+# Install dependencies
+yarn install
+
+# Install Detox CLI globally
+yarn global add detox-cli
+
+# Verify Detox installation
+detox --version
+```
+
+**6. Verify ANDROID_HOME**
+```powershell
+# Check if ANDROID_HOME is set
+echo $env:ANDROID_HOME
+
+# Should output something like: C:\Users\YourUsername\AppData\Local\Android\Sdk
+```
+
+### Running Tests Locally on Windows 11
+
+**For iOS (requires macOS):**
+- This project's iOS tests can only run on macOS
+
+**For Android:**
+
+**Step 1: Start Android Emulator**
+```powershell
+# List available AVDs
+emulator -list-avds
+
+# Start an AVD (replace 'Pixel_5_API_33' with your AVD name)
+emulator -avd Pixel_5_API_33
+```
+
+**Step 2: Start Metro (in a new PowerShell terminal)**
+```powershell
+cd detox-demo
+yarn start
+```
+
+**Step 3: Build the Android App**
+```powershell
+yarn detox:build:android
+```
+
+**Step 4: Run Tests**
+```powershell
+yarn detox:test:android
+```
+
+Or run both build and test in one command:
+```powershell
+yarn detox:android
+```
+
+### Troubleshooting on Windows 11
+
+**Issue: `java` is not recognized**
+- Install Java Development Kit (JDK 11+)
+- Add JDK to `PATH`: `setx PATH "%PATH%;C:\Program Files\Java\jdk-XX\bin"`
+- Restart PowerShell
+
+**Issue: `adb` is not recognized**
+- Verify `ANDROID_HOME` is set: `echo $env:ANDROID_HOME`
+- Add Android tools to PATH: `setx PATH "%PATH%;$env:ANDROID_HOME\platform-tools"`
+- Restart PowerShell
+
+**Issue: Emulator won't start**
+- Ensure AMD/Intel virtualization is enabled in BIOS
+- Check if another emulator/VM is running
+- Try: `emulator -avd <AVD_NAME> -writable-system`
+
+**Issue: App times out during tests**
+- Ensure Metro is running (`yarn start`)
+- Check emulator has enough memory (increase in AVD settings if needed)
+- Verify app can launch manually: `npx react-native run-android`
+
+**Issue: ESM/Path errors on Windows**
+- Ensure you're using Node.js 20+: `node --version`
+- Delete `node_modules` and `yarn.lock`, then run: `yarn install`
+- Use PowerShell (not CMD) for terminal commands
+
+### Allure Reporting Setup (MacOS and iOS only)
+
+**Allure Reporting does not work with Windows 11 and Android for Detox tests.**
+
+**Reasons:**
+- The detox-allure2-adapter and jest-allure2-reporter are only supported for iOS testing on macOS.
+- Detox Android integration does not generate the required artifacts for Allure (screenshots, videos, device logs) on Windows 11.
+- The Allure CLI and reporting tools are designed for Unix-like environments and may not function correctly on Windows.
+- Detox’s artifact manager and Allure integration rely on macOS/iOS-specific APIs and file paths.
+- Official documentation and community support for Allure reporting with Detox is limited to iOS/macOS.
+
+**Workaround:**
+You can still run Detox Android tests on Windows 11, but Allure reports will not be generated or viewable for those runs. For full Allure reporting, use iOS testing on macOS.
+
+
+
 ```bash
 # Install Allure CLI for local report generation
 brew install allure
@@ -278,7 +488,48 @@ Run only the LoginPage tests in login.test.ts:
 
 ... Or you can run shortcuts to run the tests, found in the package.json file in the root directory such as:
 * yarn detox:test:ios
- 
+
+### Run Android Tests
+
+This project follows the [official Detox Project Setup Guide](https://wix.github.io/Detox/docs/introduction/project-setup). The Android setup requires specific configuration files and test bootstrapping that are included in this project.
+
+**Required Files for Android Testing** (already configured in this project):
+- `android/app/src/androidTest/java/com/detoxdemo/DetoxTest.java` - Auxiliary test file required by Detox
+- `android/app/src/main/res/xml/network_security_config.xml` - Allows WebSocket communication with test runner
+- Proper `testInstrumentationRunner` configuration in `android/app/build.gradle`
+- Detox Maven repository in `android/build.gradle`
+
+**Step 1: Start the Android Emulator**
+* Open Android Studio
+* Go to **Device Manager**
+* Select your AVD (e.g., Pixel_5_API_33) and click the play button to start it
+* Wait for the emulator to fully boot
+
+**Step 2: Start Metro** (Required - JavaScript bundler must be running)
+* In a new terminal, run: `yarn start`
+* Metro will start on port 8081 and watch for changes
+* Keep this terminal open while running tests
+
+**Step 3: Build the Android App**
+* In a new terminal, run: `yarn detox:build:android`
+* This compiles the app and test instrumentation
+
+**Step 4: Run the Tests**
+
+Run all the tests using Detox CLI:
+* `yarn detox:test:android`
+
+Run only the LoginPage tests in login.test.ts:
+* `detox test --configuration android.emu.debug e2e/login.test.ts`
+
+Or build and test in one command:
+* `yarn detox:android`
+
+**Expected Test Results:**
+All 5 tests should pass:
+- Secure Area Flow: 2 tests
+- Login Flow: 3 tests
+
 ### Optional: Debug using Detox REPL
 
 Detox has a REPL mode, a Run - Evaluate - Print Loop where you can investigate your running app. For more information, see [Wix Detox: Debugging with Detox REPL](https://wix.github.io/Detox/docs/guide/detox-repl)
@@ -297,7 +548,7 @@ Some things you can do in REPL Mode:
 
 ### View the Reults
 
-You should see your new app running in iOS Simulator.
+You should see your new app running in iOS Simulator or Android Emulator.
 
   Login Flow
   ```

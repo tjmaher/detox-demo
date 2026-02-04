@@ -5,12 +5,16 @@
   "license": "MIT",
   "scripts": {
     "ios:dev": "react-native run-ios",
+    "android:dev": "react-native run-android",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest --config jest.config.js --coverage",
     "detox:build:ios": "detox build --configuration ios.sim.debug",
     "detox:test:ios": "detox test --configuration ios.sim.debug",
-    "detox:ios": "yarn run detox:build:ios && yarn run detox:test:ios"
+    "detox:ios": "yarn run detox:build:ios && yarn run detox:test:ios",
+    "detox:build:android": "detox build --configuration android.emu.debug",
+    "detox:test:android": "detox test --configuration android.emu.debug",
+    "detox:android": "yarn run detox:build:android && yarn run detox:test:android"
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.83.0",
@@ -39,7 +43,6 @@
     "eslint": "^8.19.0",
     "jest": "^30.0.4",
     "jest-allure2-reporter": "^2.3.0",
-    "jest-metadata": "^1.6.0",
     "prettier": "2.8.8",
     "react-test-renderer": "19.2.0",
     "sharp": "^0.34.5",

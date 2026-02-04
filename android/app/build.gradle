@@ -84,6 +84,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     signingConfigs {
         debug {
@@ -103,7 +104,33 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            proguardFile "${rootProject.projectDir}/../node_modules/detox/android/detox/proguard-rules-app.pro"
         }
+    }
+
+    testBuildType System.getProperty('testBuildType', 'debug')
+
+    packagingOptions {
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        // Detox native libraries for all architectures
+        merge 'lib/arm64-v8a/libdetox.so'
+        merge 'lib/armeabi-v7a/libdetox.so'
+        merge 'lib/x86/libdetox.so'
+        merge 'lib/x86_64/libdetox.so'
+    }
+
+    // Fix for AndroidTest manifest merge with Android 12+ exported attribute requirements
+    testOptions {
+        unitTests.all {
+            it.systemProperties['junit.jupiter.extensions.autodetection.enabled'] = 'true'
+        }
+    }
+
+    defaultConfig {
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
 
@@ -116,4 +143,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Detox testing framework - included in main app for WebSocket server initialization
+    implementation("com.wix:detox:+")
+    
+    // Test dependencies
+    androidTestImplementation("com.wix:detox:+")
+    androidTestImplementation("junit:junit:4.12")
 }

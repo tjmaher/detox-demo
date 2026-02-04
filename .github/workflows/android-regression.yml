@@ -1,0 +1,224 @@
+name: "Build & Test Android"
+
+# Define default artifact capture settings for entire workflow
+env:
+  DEFAULT_LOG_LEVEL: 'info'
+  DEFAULT_CAPTURE_LOGS: 'failing'
+  DEFAULT_CAPTURE_SCREENSHOTS: 'all'
+  DEFAULT_CAPTURE_VIDEO: 'failing'
+  DEFAULT_RECORD_PERFORMANCE: 'none'
+
+on:
+  # Run all tests when changes are pushed onto the main branch
+
+  push:
+    branches: [ main ]
+
+  # Run all tests before being merged to main, when branches are opened or synchronized
+
+  pull_request:
+    branches: [ main ]
+
+  # Run all tests every day at 10:00 PM EST
+  # schedule:
+  #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
+
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Select either all or specific test suite to run'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'login.test.ts'
+          - 'securearea.test.ts'
+      avd_name:
+        description: 'Select Android Virtual Device to run tests on'
+        required: true
+        type: choice
+        default: 'Pixel_5_API_33'
+        options:
+          - 'Pixel_5_API_33'
+          - 'Pixel_8_API_33'
+      log_level:
+        description: 'Log levels - most to least verbose'
+        required: true
+        type: choice
+        default: 'info'
+        options:
+          - 'trace'
+          - 'debug'
+          - 'verbose'
+          - 'info'
+          - 'warn'
+          - 'error'
+          - 'fatal'
+      
+      # Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)
+
+      capture_logs:
+        description: 'Capture test logs?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      capture_screenshots:
+        description: 'Capture screenshots?'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      capture_video:
+        description: 'Capture video?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'none'
+          - 'failing'
+          - 'all'
+
+# Note: Detox Instruments performance is iOS only, therefore this option is only in the GitHub Actions workflow
+#  for workflows/ios-regression.yml and not workflows/android-regression.yml
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Detox CLI
+        run: yarn global add detox-cli
+
+      - name: Ensure gradlew is executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android app
+        run: yarn detox:build:android
+
+      - name: Upload Android build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: android/app/build/outputs/apk/
+          retention-days: 1
+
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable KVM group permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Detox CLI
+        run: yarn global add detox-cli
+
+      - name: Install system dependencies for Android testing
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0 scrcpy
+
+      - name: Ensure Android SDK platform-tools are in PATH
+        run: echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH  
+
+      - name: Download Android build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-build
+          path: android/app/build/outputs/apk/
+
+      - name: Run Detox Tests on Android Emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        env:
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'info' }}
+          CAPTURE_LOGS: ${{ github.event.inputs.capture_logs || 'failing' }}
+          CAPTURE_SCREENSHOTS: ${{ github.event.inputs.capture_screenshots || 'all' }}
+          CAPTURE_VIDEO: ${{ github.event.inputs.capture_video || 'failing' }}
+          TEST_SUITE: ${{ github.event.inputs.test_suite || 'all' }}
+        with:
+          avd-name: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}
+          api-level: 33
+          arch: x86_64
+          profile: pixel
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            mkdir -p artifacts
+            echo "Starting Metro bundler..."
+            nohup yarn start --reset-cache > metro.log 2>&1 &
+            METRO_PID=$!
+            sleep 15
+            echo "Waiting for Metro to be ready..."
+            for i in {1..60}; do if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then echo "Metro is ready!"; break; fi; echo "Waiting for Metro... attempt $i/60"; sleep 2; done
+            echo "Pre-generating initial JavaScript bundle..."
+            curl -s "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false" > /dev/null || true
+            echo "Waiting for bundle generation to complete..."
+            sleep 20
+            echo "Verifying bundle availability..."
+            if curl -s "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then echo "Bundle is ready!"; else echo "Bundle may not be fully ready, but continuing..."; fi
+            adb reverse tcp:8081 tcp:8081
+            echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, Suite=$TEST_SUITE"
+            if [ "$TEST_SUITE" = "all" ]; then yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; else yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; fi
+            echo "Tests complete, Metro will be cleaned up by emulator shutdown"
+
+      - name: Upload Detox artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-artifacts
+          path: artifacts/
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: always()
+    steps:
+      - name: Clean workspace
+        run: |
+          echo "Cleaning up Detox Demo Project workspace..."
+          rm -rf /tmp/detox* || true
+          echo "Cleanup completed"

@@ -372,6 +372,7 @@ jobs:
           
           echo "Detox tests completed on $DEVICE_NAME"
         env:
+          DETOX_ENABLE_ALLURE: 'true'
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true
           RCT_METRO_PORT: 8081

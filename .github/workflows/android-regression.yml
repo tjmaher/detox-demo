@@ -157,6 +157,11 @@ jobs:
       - name: Install Detox CLI
         run: yarn global add detox-cli
 
+      - name: Install system dependencies for Android testing
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpulse0 scrcpy
+
       - name: Ensure Android SDK platform-tools are in PATH
         run: echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH  
 
@@ -182,8 +187,23 @@ jobs:
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, AVD=${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}, Suite=$TEST_SUITE"
+            mkdir -p artifacts
+            echo "Starting Metro bundler..."
+            yarn start --reset-cache &
+            METRO_PID=$!
+            sleep 15
+            echo "Waiting for Metro to be ready..."
+            for i in {1..60}; do if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then echo "Metro is ready!"; break; fi; echo "Waiting for Metro... attempt $i/60"; sleep 2; done
+            echo "Pre-generating initial JavaScript bundle..."
+            curl -s "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false" > /dev/null || true
+            echo "Waiting for bundle generation to complete..."
+            sleep 20
+            echo "Verifying bundle availability..."
+            if curl -s "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then echo "Bundle is ready!"; else echo "Bundle may not be fully ready, but continuing..."; fi
+            adb reverse tcp:8081 tcp:8081
+            echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, Suite=$TEST_SUITE"
             if [ "$TEST_SUITE" = "all" ]; then yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; else yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; fi
+            kill $METRO_PID || true
 
       - name: Upload Detox artifacts
         if: always()

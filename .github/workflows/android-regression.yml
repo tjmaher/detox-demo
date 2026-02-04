@@ -168,6 +168,12 @@ jobs:
 
       - name: Run Detox Tests on Android Emulator
         uses: ReactiveCircus/android-emulator-runner@v2
+        env:
+          LOG_LEVEL: ${{ github.event.inputs.log_level || 'info' }}
+          CAPTURE_LOGS: ${{ github.event.inputs.capture_logs || 'failing' }}
+          CAPTURE_SCREENSHOTS: ${{ github.event.inputs.capture_screenshots || 'all' }}
+          CAPTURE_VIDEO: ${{ github.event.inputs.capture_video || 'failing' }}
+          TEST_SUITE: ${{ github.event.inputs.test_suite || 'all' }}
         with:
           avd-name: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}
           api-level: 33
@@ -176,36 +182,20 @@ jobs:
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            LOG_LEVEL="${{ github.event.inputs.log_level || env.DEFAULT_LOG_LEVEL }}"
-            CAPTURE_LOGS="${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}"
-            CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}"
-            CAPTURE_VIDEO="${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}"
             echo "Test configuration:"
             echo "  Log level: $LOG_LEVEL"
             echo "  Capture logs: $CAPTURE_LOGS"
             echo "  Capture screenshots: $CAPTURE_SCREENSHOTS"
             echo "  Capture video: $CAPTURE_VIDEO"
             echo "  AVD: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}"
-            echo "  Test suite: ${{ github.event.inputs.test_suite || 'all' }}"
-            if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
+            echo "  Test suite: $TEST_SUITE"
+            
+            if [ "$TEST_SUITE" = "all" ]; then
               echo "Running all Detox tests..."
-              yarn detox:test:android \
-                --loglevel "$LOG_LEVEL" \
-                --artifacts-location artifacts \
-                --record-logs "$CAPTURE_LOGS" \
-                --take-screenshots "$CAPTURE_SCREENSHOTS" \
-                --record-videos "$CAPTURE_VIDEO" \
-                || echo "Tests completed with failures"
+              yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"
             else
-              echo "Running specific test: ${{ github.event.inputs.test_suite }}"
-              yarn detox test e2e/${{ github.event.inputs.test_suite }} \
-                --configuration android.emu.debug \
-                --loglevel "$LOG_LEVEL" \
-                --artifacts-location artifacts \
-                --record-logs "$CAPTURE_LOGS" \
-                --take-screenshots "$CAPTURE_SCREENSHOTS" \
-                --record-videos "$CAPTURE_VIDEO" \
-                || echo "Tests completed with failures"
+              echo "Running specific test: $TEST_SUITE"
+              yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"
             fi
 
       - name: Upload Detox artifacts

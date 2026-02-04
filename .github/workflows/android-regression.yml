@@ -210,7 +210,7 @@ jobs:
           path: artifacts/
 
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     needs: [build, test]
     if: always()
     steps:

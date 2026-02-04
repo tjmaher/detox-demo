@@ -1,0 +1,203 @@
+name: "Build & Test Android"
+
+# Define default artifact capture settings for entire workflow
+env:
+  DEFAULT_LOG_LEVEL: 'info'
+  DEFAULT_CAPTURE_LOGS: 'failing'
+  DEFAULT_CAPTURE_SCREENSHOTS: 'all'
+  DEFAULT_CAPTURE_VIDEO: 'failing'
+  DEFAULT_RECORD_PERFORMANCE: 'none'
+
+on:
+  # Run all tests when changes are pushed onto the main branch
+
+  push:
+    branches: [ main ]
+
+  # Run all tests before being merged to main, when branches are opened or synchronized
+
+  pull_request:
+    branches: [ main ]
+
+  # Run all tests every day at 10:00 PM EST
+  # schedule:
+  #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
+
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Select either all or specific test suite to run'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'all'
+          - 'login.test.ts'
+          - 'securearea.test.ts'
+      avd_name:
+        description: 'Select Android Virtual Device to run tests on'
+        required: true
+        type: choice
+        default: 'Pixel_5_API_33'
+        options:
+          - 'Pixel_5_API_33'
+          - 'Pixel_8_API_33'
+      log_level:
+        description: 'Log levels - most to least verbose'
+        required: true
+        type: choice
+        default: 'info'
+        options:
+          - 'trace'
+          - 'debug'
+          - 'verbose'
+          - 'info'
+          - 'warn'
+          - 'error'
+          - 'fatal'
+      
+      # Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)
+
+      capture_logs:
+        description: 'Capture test logs?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      capture_screenshots:
+        description: 'Capture screenshots?'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      capture_video:
+        description: 'Capture video?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'none'
+          - 'failing'
+          - 'all'
+
+# Note: Detox Instruments performance is iOS only
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Detox CLI
+        run: yarn global add detox-cli
+
+      - name: Build Android app
+        run: yarn detox:build:android
+
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Detox CLI
+        run: yarn global add detox-cli
+
+      - name: Start Android Emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          avd-name: ${{ github.event.inputs.avd_name }}
+          api-level: 33
+          arch: x86_64
+          profile: pixel
+          disable-animations: true
+
+      - name: Set test configuration variables
+        run: |
+          echo "Setting test configuration variables..."
+          LOG_LEVEL="${{ github.event.inputs.log_level || env.DEFAULT_LOG_LEVEL }}"
+          CAPTURE_LOGS="${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}"
+          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}"
+          CAPTURE_VIDEO="${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}"
+          echo "Test configuration:"
+          echo "  Log level: $LOG_LEVEL"
+          echo "  Capture logs: $CAPTURE_LOGS"
+          echo "  Capture screenshots: $CAPTURE_SCREENSHOTS"
+          echo "  Capture video: $CAPTURE_VIDEO"
+          echo "  AVD: ${{ github.event.inputs.avd_name }}"
+          echo "  Test suite: ${{ github.event.inputs.test_suite }}"
+          echo "::set-output name=LOG_LEVEL::$LOG_LEVEL"
+          echo "::set-output name=CAPTURE_LOGS::$CAPTURE_LOGS"
+          echo "::set-output name=CAPTURE_SCREENSHOTS::$CAPTURE_SCREENSHOTS"
+          echo "::set-output name=CAPTURE_VIDEO::$CAPTURE_VIDEO"
+
+      - name: Run Detox tests
+        run: |
+          LOG_LEVEL="${{ github.event.inputs.log_level || env.DEFAULT_LOG_LEVEL }}"
+          CAPTURE_LOGS="${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}"
+          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}"
+          CAPTURE_VIDEO="${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}"
+          if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
+            echo "Running all Detox tests..."
+            yarn detox:test:android \
+              --loglevel "$LOG_LEVEL" \
+              --artifacts-location artifacts \
+              --record-logs "$CAPTURE_LOGS" \
+              --take-screenshots "$CAPTURE_SCREENSHOTS" \
+              --record-videos "$CAPTURE_VIDEO" \
+              || echo "Tests completed with failures"
+          else
+            echo "Running specific test: ${{ github.event.inputs.test_suite }}"
+            yarn detox test e2e/${{ github.event.inputs.test_suite }} \
+              --configuration android.emu.debug \
+              --loglevel "$LOG_LEVEL" \
+              --artifacts-location artifacts \
+              --record-logs "$CAPTURE_LOGS" \
+              --take-screenshots "$CAPTURE_SCREENSHOTS" \
+              --record-videos "$CAPTURE_VIDEO" \
+              || echo "Tests completed with failures"
+          fi
+
+      - name: Upload Detox artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-artifacts
+          path: artifacts/

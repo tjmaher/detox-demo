@@ -206,13 +206,13 @@ jobs:
           name: detox-artifacts
           path: artifacts/
 
-cleanup:
-  runs-on: ubuntu-latest
-  needs: [build, test]
-  if: always()
-  steps:
-    - name: Clean workspace
-      run: |
-        echo "Cleaning up Detox Demo Project workspace..."
-        rm -rf /tmp/detox* || true
-        echo "Cleanup completed"
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: always()
+    steps:
+      - name: Clean workspace
+        run: |
+          echo "Cleaning up Detox Demo Project workspace..."
+          rm -rf /tmp/detox* || true
+          echo "Cleanup completed"

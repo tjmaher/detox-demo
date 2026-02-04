@@ -112,6 +112,9 @@ jobs:
       - name: Install Detox CLI
         run: yarn global add detox-cli
 
+      - name: Ensure gradlew is executable
+        run: chmod +x android/gradlew
+
       - name: Build Android app
         run: yarn detox:build:android
 

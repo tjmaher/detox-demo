@@ -203,8 +203,7 @@ jobs:
             adb reverse tcp:8081 tcp:8081
             echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, Suite=$TEST_SUITE"
             if [ "$TEST_SUITE" = "all" ]; then yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; else yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; fi
-            echo "Stopping Metro bundler..." && (kill $METRO_PID 2>/dev/null; pkill -f "react-native.*start" 2>/dev/null; pkill -f "metro" 2>/dev/null; sleep 2) || true
-            echo "Cleanup complete"
+            echo "Tests complete, Metro will be cleaned up by emulator shutdown"
 
       - name: Upload Detox artifacts
         if: always()

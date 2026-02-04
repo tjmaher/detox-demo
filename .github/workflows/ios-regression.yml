@@ -251,8 +251,6 @@ jobs:
       - name: Run Detox e2e tests
         id: run-tests
         continue-on-error: true
-        env:
-          DETOX_ENABLE_ALLURE: 'true'
         run: |
           # Create directories explicitly
           mkdir -p allure-results
@@ -374,6 +372,7 @@ jobs:
           
           echo "Detox tests completed on $DEVICE_NAME"
         env:
+          DETOX_ENABLE_ALLURE: 'true'
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true
           RCT_METRO_PORT: 8081

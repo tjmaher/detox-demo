@@ -136,6 +136,16 @@ detox test --configuration ios.sim.debug --loglevel info --artifacts-location ar
 
 Still in the Alpha stage, detox-allure2-adapter is a bridge between Detox (the mobile E2E testing framework) and jest-allure2-reporter, enables integration of Allure reporting with Detox tests, providing reports with screenshots, videos, device logs, and view hierarchies. The adapter replaces Detox's built-in artifacts manager to integrate with Allure's reporting capabilities.
 
+**Platform Support:**
+The Allure adapter is conditionally loaded based on two factors:
+- **Windows**: Disabled due to [ESM (ECMAScript Module)](https://nodejs.org/api/esm.html) compatibility issues with jest-allure2-reporter
+- **Environment Variable**: Only loads when the custom `DETOX_ENABLE_ALLURE` environment variable I have defined is true.
+
+This means:
+- **iOS CI** (`ios-regression.yml`): Sets `DETOX_ENABLE_ALLURE=true`, full Allure reporting with videokitten
+- **Android CI** (`android-regression.yml`): Does not set the variable, uses Detox's native artifact capture (videokitten/scrcpy has recording issues on Android emulators)
+- **Local Windows development**: Allure disabled regardless of env var due to ESM issues
+
 ### Allure Reports
 
 The Allure Framework, created as an internal product by Yandex that was open-sourced, and is now maintained by Qameta Software. According to an [article on Habr.com](https://habr.com/ru/companies/yandex/articles/232697/), published on Yandex's company blog in 2014, they wanted a way to make the automation results transparent not just to the automation engineers, but the entire testing team to make sure that the automation closely match the original manual tests. 

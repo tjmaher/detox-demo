@@ -10,10 +10,15 @@ const path = require('path');
 
 const isWindows = process.platform === 'win32';
 
+// Only enable Allure when explicitly opted-in via DETOX_ENABLE_ALLURE=true, first defined and set by me in 
+//   .github/workflow/android-regression.yml
+// This is disabled for Android due to videokitten/scrcpy recording issues
+const useAllure = process.env.DETOX_ENABLE_ALLURE === 'true';
+
 const reporters = ['detox/runners/jest/reporter'];
 
-// Only add Allure reporter on non-Windows platforms due to ESM issues
-if (!isWindows) {
+// Only add Allure reporter on non-Windows platforms when enabled due to ESM issues
+if (!isWindows && useAllure) {
   reporters.push([
     'jest-allure2-reporter',
     {
@@ -25,7 +30,8 @@ if (!isWindows) {
 
 const eventListeners = [];
 
-if (!isWindows) {
+// Only add Allure event listener when enabled (not on Windows, not on Android)
+if (!isWindows && useAllure) {
   eventListeners.push([
     'detox-allure2-adapter',
     {

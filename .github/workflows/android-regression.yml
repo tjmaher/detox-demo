@@ -189,7 +189,7 @@ jobs:
           script: |
             mkdir -p artifacts
             echo "Starting Metro bundler..."
-            yarn start --reset-cache &
+            nohup yarn start --reset-cache > metro.log 2>&1 &
             METRO_PID=$!
             sleep 15
             echo "Waiting for Metro to be ready..."
@@ -203,7 +203,11 @@ jobs:
             adb reverse tcp:8081 tcp:8081
             echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, Suite=$TEST_SUITE"
             if [ "$TEST_SUITE" = "all" ]; then yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; else yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; fi
-            kill $METRO_PID || true
+            echo "Stopping Metro bundler..."
+            kill $METRO_PID 2>/dev/null || true
+            pkill -f "react-native.*start" 2>/dev/null || true
+            pkill -f "metro" 2>/dev/null || true
+            sleep 2
 
       - name: Upload Detox artifacts
         if: always()

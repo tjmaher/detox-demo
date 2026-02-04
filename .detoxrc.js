@@ -1,6 +1,10 @@
 /** @type {Detox.DetoxConfig} */
+
+// Only use Allure adapter for iOS. Android video recording not currently supported
+const useAllure = process.env.DETOX_ENABLE_ALLURE === 'true';
+
 module.exports = {
-  extends: 'detox-allure2-adapter/preset-detox',
+  ...(useAllure ? { extends: 'detox-allure2-adapter/preset-detox' } : {}),
   
   artifacts: {
     rootDir: 'artifacts',

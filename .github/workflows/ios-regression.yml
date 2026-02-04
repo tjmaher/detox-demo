@@ -251,6 +251,8 @@ jobs:
       - name: Run Detox e2e tests
         id: run-tests
         continue-on-error: true
+        env:
+          DETOX_ENABLE_ALLURE: 'true'
         run: |
           # Create directories explicitly
           mkdir -p allure-results

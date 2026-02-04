@@ -182,21 +182,8 @@ jobs:
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            echo "Test configuration:"
-            echo "  Log level: $LOG_LEVEL"
-            echo "  Capture logs: $CAPTURE_LOGS"
-            echo "  Capture screenshots: $CAPTURE_SCREENSHOTS"
-            echo "  Capture video: $CAPTURE_VIDEO"
-            echo "  AVD: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}"
-            echo "  Test suite: $TEST_SUITE"
-            
-            if [ "$TEST_SUITE" = "all" ]; then
-              echo "Running all Detox tests..."
-              yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"
-            else
-              echo "Running specific test: $TEST_SUITE"
-              yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"
-            fi
+            echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, AVD=${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}, Suite=$TEST_SUITE"
+            if [ "$TEST_SUITE" = "all" ]; then yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; else yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; fi
 
       - name: Upload Detox artifacts
         if: always()

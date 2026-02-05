@@ -6,28 +6,12 @@ DetoxDemo is a working React Native demo app that gives examples of:
 * Common methods used by Page Objects refactored into a [Base Page](https://github.com/tjmaher/detox-demo/blob/main/e2e/pages/base-page.ts)
 * Log reports published after a test run, written like a manual test plan testers can follow
 * Pre-written yarn scripts to build and test stored in a [package.json](https://github.com/tjmaher/detox-demo/blob/main/package.json)
-* detox-allure2-adapter set up in [.detoxrc.js](https://github.com/tjmaher/detox-demo/blob/main/.detoxrc.js) and the [e2e/jest.config.js](https://github.com/tjmaher/detox-demo/blob/main/e2e/jest.config.js)
-* [Allure Reports](https://tjmaher.github.io/detox-demo/ios/) configured to show historical data
-* CI/CD provided by [GitHub Action workflow](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml)
-* A working React Native mobile app for iOS [complete with source code](https://github.com/tjmaher/detox-demo/tree/main/src)
+* For iOS: detox-allure2-adapter set up in [.detoxrc.js](https://github.com/tjmaher/detox-demo/blob/main/.detoxrc.js) and the [e2e/jest.config.js](https://github.com/tjmaher/detox-demo/blob/main/e2e/jest.config.js) (Allure Reports not working for Android)
+* For iOS: [Allure Reports](https://tjmaher.github.io/detox-demo/ios/) configured to show historical data
+* CI/CD that triggers tests to run after every pull request is submitted, provided by GitHub Action Workflows for [iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) and [Android](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/android-regression.yml) testing
+* A working React Native mobile app for iOS and Android [complete with source code](https://github.com/tjmaher/detox-demo/tree/main/src)
 * A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
 * Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
-
-Want to kick off a job to run all the Login tests in the CI/ CD platform using our GitHub Actions workflow?
-* Go to Actions -> [View all Workflows](https://github.com/tjmaher/detox-demo/actions)
-* Under the **Actions** column to the left, select [Build & Test iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml)
-* Select the **\[Run workflow\]** button to see all the choices I set up in the [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml) configuration file under the on: workflow_dispatch -> inputs
-* Say you were a developer that wanted to test out their JIRA-123 branch code before merging, under "Use workflow from" they could choose branch JIRA-123 here instead of running against the main branch.
-* Which test suite would you like to run? Login? SecureArea? Default is "all".
-* Which iPhone 16 would you like to run the tests on? Regular iPhone 16, Pro, or Pro Max? Or maybe an iPad Mini, Air, or Pro? 
-* What log level? Select any range from the very verbose "trace", to throwing alerts only if things are "fatal". Default is "info".
-* What level of artifacts do you want to capture for logs, screenshots, or videos? All, just failing, or none?
-* Do you want to run performance testing with Detox Instruments? We have that option! Still looking how the Wix Incubator's [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) works with CI/CD. 
-* Or you can just scroll down to the bottom and select **\[Run Workflow\]** and kick off the default values set up in [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml)
-* A new "Build & Test iOS" run will be created. Feel free to click into the run to see it run through the build -> test -> publish-allure-reports -> cleanup stages where you can see all Homebrew, RubyGems, Cocoapods, Node.js, and Applesimutils are configured and run.
-* If you click into the "build" stage, you can see it work through tasks such as "Set up job", "Checkout repository", "Setup Homebrew", "Setup Ruby", "Cache Homebrew and RubyGems", etc. It takes 30 minutes for a Detox-embedded build to be generated. 
-* When everything is finished, you can see in the run downloadable artifacts such as videos, logs, screenshots, and the allure-report. 
-* You can also view the Allure Reports at [https://tjmaher.github.io/detox-demo/ios/]
 
 ## Screenshots of LoginPage and SecureArea screens
 
@@ -53,6 +37,24 @@ Want to kick off a job to run all the Login tests in the CI/ CD platform using o
 </table>
 
 </div>
+
+## Manual kicking off CI / CD using GitHub Action Workflows for iPhone or Android testing
+
+Want to kick off a job to run all the Login tests in the CI/ CD platform using our GitHub Actions workflow?
+* Go to Actions -> [View all Workflows](https://github.com/tjmaher/detox-demo/actions)
+* Under the **Actions** column to the left, select [Build & Test iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) or [Build & Test Android](https://github.com/tjmaher/detox-demo/actions/workflows/android-regression.yml).
+* Select the **\[Run workflow\]** button to see all the choices I set up in the [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml) or the [android-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/android-regression.yml) configuration file under the on: workflow_dispatch -> inputs
+* Say you were a developer that wanted to test out their JIRA-123 branch code before merging, under "Use workflow from" they could choose branch JIRA-123 here instead of running against the main branch.
+* Which test suite would you like to run? Login? SecureArea? Default is "all".
+* Which iPhone 16 would you like to run the tests on? Regular iPhone 16, Pro, or Pro Max? Or maybe an iPad Mini, Air, or Pro? Or an Android phone such as a Google Pixel 5 or Pixel 6?
+* What log level? Select any range from the very verbose "trace", to throwing alerts only if things are "fatal". Default is "info".
+* What level of artifacts do you want to capture for logs, screenshots, or videos? All, just failing, or none?
+* Do you want to run performance testing with Detox Instruments? We have that option! Still looking how the Wix Incubator's [Detox Instruments](https://github.com/wix-incubator/DetoxInstruments) works with CI/CD. 
+* Or you can just scroll down to the bottom and select **\[Run Workflow\]** and kick off the default values set up in [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml)
+* A new "Build & Test iOS" run will be created. Feel free to click into the run to see it run through the build -> test -> publish-allure-reports -> cleanup stages where you can see all Homebrew, RubyGems, Cocoapods, Node.js, and Applesimutils are configured and run.
+* If you click into the "build" stage, you can see it work through tasks such as "Set up job", "Checkout repository", "Setup Homebrew", "Setup Ruby", "Cache Homebrew and RubyGems", etc. It takes 30 minutes for a Detox-embedded build to be generated. 
+* When everything is finished, you can see in the run downloadable artifacts such as videos, logs, screenshots, and the allure-report (if iOS). 
+* For iOS: You can also view the Allure Reports at [https://tjmaher.github.io/detox-demo/ios/]
 
 ## About DetoxDemo
 

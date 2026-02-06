@@ -25,19 +25,5 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-
-      <!-- AndroidX Test framework activities - needed for Detox -->
-      <activity
-        android:name="androidx.test.core.app.InstrumentationActivityInvoker$BootstrapActivity"
-        android:exported="false"
-        tools:node="remove" />
-      <activity
-        android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity"
-        android:exported="false"
-        tools:node="remove" />
-      <activity
-        android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyFloatingActivity"
-        android:exported="false"
-        tools:node="remove" />
     </application>
 </manifest>

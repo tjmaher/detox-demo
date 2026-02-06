@@ -3,6 +3,12 @@
 // Only use Allure adapter for iOS. Android video recording not currently supported
 const useAllure = process.env.DETOX_ENABLE_ALLURE === 'true';
 
+// Cross-platform Gradle command (Windows uses gradlew.bat, Unix uses ./gradlew)
+const isWindows = process.platform === 'win32';
+const gradleCmd = isWindows 
+  ? 'cd android && gradlew.bat assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..'
+  : 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..';
+
 module.exports = {
   ...(useAllure ? { extends: 'detox-allure2-adapter/preset-detox' } : {}),
   
@@ -32,7 +38,7 @@ module.exports = {
     'android.debug': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
-      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd ..'
+      build: gradleCmd
     }
   },
   

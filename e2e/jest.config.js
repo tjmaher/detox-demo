@@ -11,7 +11,7 @@ const path = require('path');
 const isWindows = process.platform === 'win32';
 
 // Only enable Allure when explicitly opted-in via DETOX_ENABLE_ALLURE=true, first defined and set by me in 
-//   .github/workflow/android-regression.yml
+//   .github/workflows/android-regression.yml
 // This is disabled for Android due to videokitten/scrcpy recording issues
 const useAllure = process.env.DETOX_ENABLE_ALLURE === 'true';
 

@@ -1,4 +1,4 @@
-# Detox Demo - React Native iOS App
+# Detox Demo - React Native iOS + Android App
 
 DetoxDemo is a working React Native demo app running on both the iPhone and Android mobile devices that gives examples of:
 * [Mobile automation tests](https://github.com/tjmaher/detox-demo/blob/main/e2e/login.test.ts) written in Detox + TypeScript 
@@ -9,6 +9,7 @@ DetoxDemo is a working React Native demo app running on both the iPhone and Andr
 * For iOS: detox-allure2-adapter set up in [.detoxrc.js](https://github.com/tjmaher/detox-demo/blob/main/.detoxrc.js) and the [e2e/jest.config.js](https://github.com/tjmaher/detox-demo/blob/main/e2e/jest.config.js) (Allure Reports not working for Android)
 * For iOS: [Allure Reports](https://tjmaher.github.io/detox-demo/ios/) configured to show historical data
 * For [iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) and [Android](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/android-regression.yml) emulators, CI/CD that triggers tests to run after every pull request is submitted, provided by GitHub Action Workflows 
+* A security scanning workflow ([security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml)) that uses [Snyk](https://snyk.io) to scan for vulnerabilities in dependencies and code. Yes, the username (tomsmith) and password (SuperSecretPassword!) are in plain text in our [e2e/credentials](https://github.com/tjmaher/detox-demo/blob/main/e2e/credentials.ts) file, but only because this is a demo project. 
 * A working React Native mobile app for iOS and Android [complete with source code](https://github.com/tjmaher/detox-demo/tree/main/src)
 * A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
 * Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
@@ -64,7 +65,7 @@ The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the
 
 DetoxDemo uses Wix's [Detox](https://wix.github.io/Detox/), a grey-box end-to-end automated testing framework built to test React Native applications. Reports are produced via [Allure Reports](https://allurereport.org/) by integrating The Wix Community's [detox-allure2-reporter](https://github.com/wix-incubator/detox-allure2-adapter). CI/CD Test reports produced by a GitHub Actions workflow are published at [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/). 
 
-DetoxDemo, the app under test for this project, was constructed by GitHub CoPilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub CoPilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub CoPilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
+DetoxDemo, the app under test for this project, was constructed by GitHub Copilot via prompts from T.J. Maher. The automation framework was lovingly crafted by hand, with locators artisinally wrapped in page objects by T.J. Maher. You can read more about the hectic journey T.J. had with GitHub Copilot creating the app under test in T.J.'s LinkedIn article: [First Time Using GitHub Copilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
 
 ## About the Author
 
@@ -148,9 +149,71 @@ This means:
 - **Android CI** (`android-regression.yml`): Does not set the variable, uses Detox's native artifact capture (videokitten/scrcpy has recording issues on Android emulators)
 - **Local Windows development**: Allure disabled regardless of env var due to ESM issues
 
+### Snyk
+
+[Snyk](https://snyk.io/) is a developer security platform that helps find and fix vulnerabilities in code, dependencies, containers, and infrastructure as code. Founded in 2015, Snyk integrates directly into development workflows to scan for security issues before they reach production.
+
+It is free to use for public code repositories. If it's free, it's for me, I'll take three. 
+
+**How we use Snyk in DetoxDemo:**
+This project uses Snyk for automated security scanning via the [security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml) GitHub Actions workflow:
+- **Dependency Scanning**: Checks `package.json` and `yarn.lock` for known vulnerabilities in npm packages
+- **Static Application Security Testing (SAST)**: Scans source code for potential security issues using `snyk code test`
+- **GitHub Integration**: Results are uploaded to GitHub Code Scanning and appear in the repository's Security tab
+
+**Resources:**
+- [Snyk Documentation](https://docs.snyk.io/)
+- [Snyk for JavaScript/Node.js](https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/javascript)
+- [GitHub Actions Integration](https://docs.snyk.io/integrate-with-snyk/git-repository-scm-integrations/snyk-github-action)
+
 ### Allure Reports
 
 The Allure Framework, created as an internal product by Yandex that was open-sourced, and is now maintained by Qameta Software. According to an [article on Habr.com](https://habr.com/ru/companies/yandex/articles/232697/), published on Yandex's company blog in 2014, they wanted a way to make the automation results transparent not just to the automation engineers, but the entire testing team to make sure that the automation closely match the original manual tests. 
+
+### GitHub Actions, GitHub Workflows & GitHub Pages
+
+[GitHub Actions](https://github.com/features/actions) is GitHub's built-in CI/CD (Continuous Integration/Continuous Deployment) platform, launched in November 2019. It allows you to automate workflows directly in your GitHub repository, triggered by events like pushes, pull requests, or scheduled times.
+
+**GitHub Workflows** are YAML configuration files stored in `.github/workflows/` that define automated processes. Each workflow can contain multiple jobs that run on GitHub-hosted runners (virtual machines with macOS, Ubuntu, or Windows).
+
+**GitHub Pages** is a free static site hosting service that serves content directly from a GitHub repository. It's commonly used to host documentation, project websites, and—in our case—test reports.
+
+**How DetoxDemo uses these technologies:**
+
+| Workflow | Purpose | Link |
+|----------|---------|------|
+| [ios-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/ios-regression.yml) | Builds iOS app, runs Detox tests on iPhone simulator, publishes Allure reports | [Run Workflow](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) |
+| [android-regression.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/android-regression.yml) | Builds Android app, runs Detox tests on Android emulator | [Run Workflow](https://github.com/tjmaher/detox-demo/actions/workflows/android-regression.yml) |
+| [security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml) | Runs Snyk security scans on dependencies and code | [Run Workflow](https://github.com/tjmaher/detox-demo/actions/workflows/security.yml) |
+
+**GitHub Pages in this project:**
+- Allure test reports are automatically deployed to GitHub Pages after each iOS test run
+- View live reports at: [https://tjmaher.github.io/detox-demo/ios/](https://tjmaher.github.io/detox-demo/ios/)
+
+**Resources:**
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [GitHub Actions Workflow Syntax Reference](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
+- [GitHub Pages Documentation](https://docs.github.com/en/pages)
+
+### GitHub Copilot
+
+[GitHub Copilot](https://github.com/features/copilot) is an AI-powered coding assistant developed by GitHub and OpenAI, launched in June 2021. It integrates directly into code editors like VS Code, providing real-time code suggestions, completions, and even generating entire functions based on comments or context.
+
+**WARNING:** All documention and code GitHub Copilot produces must be reviewed with a fine-toothed comb. GitHub Copilot has referenced online docs that do not actually exist, and has hallucinated methods that are not actually there. Even if you did not write the code, T.J. believes that as an automation developer, you are still responsible for every line of code you submit to a code review and every line of code that is approved. 
+
+**How GitHub Copilot was used in DetoxDemo:**
+- **App Development**: The entire React Native app under test ([LoginScreen.tsx](https://github.com/tjmaher/detox-demo/blob/main/src/screens/LoginScreen.tsx), [SecureAreaScreen.tsx](https://github.com/tjmaher/detox-demo/blob/main/src/screens/SecureAreaScreen.tsx), [AppIcon.tsx](https://github.com/tjmaher/detox-demo/blob/main/src/components/AppIcon.tsx)) was generated by GitHub Copilot via prompts from T.J. Maher
+- **Code Review**: GitHub Copilot's code review feature identified issues like unused imports, redundant code, and typos
+- **Documentation**: 
+* Assisted with proofreading README documentation
+* Continuously updating the Project Structure chart as more uneccesary bells, whistles, and silly doodads are bolted onto this project
+* Building out workflow configurations for iOS and Android.
+
+Read more about the journey in T.J.'s LinkedIn article: [First Time Using GitHub Copilot to Create a ReactNative LoginPage app. What Could Go Wrong?](https://www.linkedin.com/pulse/first-time-using-github-copilot-create-reactnative-app-maher-jr--1iaoe/)
+
+**Resources:**
+- [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
+- [GitHub Copilot in VS Code](https://code.visualstudio.com/docs/copilot/overview)
 
 ## Project Structure
 
@@ -175,7 +238,9 @@ detox-demo/
 │
 ├── .github/
 │   └── workflows/
-│       └── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
+│       ├── android-regression.yml # CI/CD pipeline for Android emulator testing
+│       ├── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
+│       └── security.yml          # Snyk security scanning for vulnerabilities
 │
 ├── ios/                          # iOS native project files and Xcode configuration
 │   ├── build/                    # Xcode build output (generated)
@@ -184,6 +249,20 @@ detox-demo/
 │   └── DetoxDemo/
 │       └── Images.xcassets/
 │           └── AppIcon.appiconset/ # Custom app icons
+│
+├── android/                      # Android native project files and Gradle configuration
+│   ├── app/
+│   │   ├── build.gradle          # App-level Gradle build configuration
+│   │   └── src/
+│   │       ├── main/
+│   │       │   ├── AndroidManifest.xml
+│   │       │   └── res/          # Android resources (icons, layouts, etc.)
+│   │       └── androidTest/
+│   │           └── java/com/detoxdemo/
+│   │               └── DetoxTest.java  # Detox test bootstrapping for Android
+│   ├── build.gradle              # Project-level Gradle configuration
+│   ├── gradle.properties         # Gradle settings
+│   └── gradlew                   # Gradle wrapper script
 │
 ├── scripts/
 │   └── generate-tj-icon.js       # Icon generation script 
@@ -195,8 +274,8 @@ detox-demo/
 │   ├── attachments/              # Device logs from failed tests
 │   └── ios.sim.debug.*/          # Per-test-run artifacts (screenshots, videos, logs)
 │
-├── allure-results/              # Allure test results JSON files
-├── allure-report/               # Generated Allure HTML reports (local and CI)
+├── allure-results/              # Allure test results JSON files (generated)
+├── allure-report/               # Generated Allure HTML reports (generated)
 │
 ├── node_modules/                # Node.js dependencies 
 ├── .detoxrc.js                  # Detox configuration targeting iPhone 16 Pro simulator
@@ -287,7 +366,7 @@ For more information, visit [CocoaPods Getting Started guide](https://guides.coc
 
    **See official Detox documentation:**
    - [Create required files](https://wix.github.io/Detox/docs/introduction/project-setup/#create-required-files)
-     ```
+
 5. **Metro must be running before tests:**
    - Start Metro: `yarn start` (in a separate terminal)
 6. Build and test:
@@ -295,6 +374,203 @@ For more information, visit [CocoaPods Getting Started guide](https://guides.coc
    - Test: `yarn detox:test:android`
 
 **Note:** iOS is the primary platform for this project. Android support is provided for local development and demonstration, following the official Detox documentation. Always refer to the [Detox Project Setup Guide](https://wix.github.io/Detox/docs/introduction/project-setup) for the most up-to-date instructions.
+
+## Setup for macOS Local Development
+
+This guide covers setting up DetoxDemo for local development and testing on macOS (MacBook).
+
+### System Requirements
+- macOS 13 (Ventura) or later
+- Xcode 15+ (for iOS development)
+- Node.js 20+ (LTS recommended)
+- Homebrew
+- 16GB RAM minimum (8GB+ free)
+- 50GB+ free disk space (for Xcode, simulators, and Android SDK)
+
+### Installation Steps
+
+**1. Install Homebrew** (if not already installed)
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**2. Install Node.js and Yarn**
+```bash
+# Install Node.js via Homebrew
+brew install node
+
+# Verify installation
+node --version
+npm --version
+
+# Install Yarn
+npm install --global yarn
+
+# Verify Yarn
+yarn --version
+```
+
+**3. Install Xcode** (for iOS development)
+- Download Xcode from the Mac App Store
+- Open Xcode and accept the license agreement
+- Install Xcode Command Line Tools:
+  ```bash
+  xcode-select --install
+  ```
+- Open Xcode → Settings → Platforms → Install iOS Simulator
+
+**4. Install Ruby and CocoaPods**
+```bash
+# macOS comes with Ruby, but you may want to use rbenv for version management
+brew install rbenv ruby-build
+
+# Add rbenv to your shell (add to ~/.zshrc or ~/.bash_profile)
+echo 'eval "$(rbenv init -)"' >> ~/.zshrc
+source ~/.zshrc
+
+# Install Ruby 3.2+
+rbenv install 3.2.0
+rbenv global 3.2.0
+
+# Verify Ruby
+ruby --version
+
+# Install CocoaPods
+gem install cocoapods
+
+# Verify CocoaPods
+pod --version
+```
+
+**5. Install Android SDK** (for Android development)
+```bash
+# Install Android Studio via Homebrew
+brew install --cask android-studio
+```
+- Run Android Studio and complete the setup wizard
+- Go to **Android Studio** → **Settings** → **Appearance & Behavior** → **System Settings** → **Android SDK**
+- Install Android SDK API level 33+
+- Add environment variables to `~/.zshrc`:
+  ```bash
+  export ANDROID_HOME=$HOME/Library/Android/sdk
+  export PATH=$PATH:$ANDROID_HOME/emulator
+  export PATH=$PATH:$ANDROID_HOME/platform-tools
+  ```
+- Reload your shell: `source ~/.zshrc`
+
+**6. Create Android Virtual Device (AVD)**
+- Open Android Studio
+- Go to **Tools** → **Device Manager**
+- Click **Create device**
+- Select a device (e.g., **Pixel 5** or **Pixel 8**)
+- Click **Next** and select **API 33** or higher
+- Click **Finish**
+- Update `.detoxrc.js` with your AVD name if different
+
+**7. Clone and Setup DetoxDemo**
+```bash
+# Clone the repository
+git clone https://github.com/tjmaher/detox-demo.git
+cd detox-demo
+
+# Install dependencies
+yarn install
+
+# Install iOS dependencies
+cd ios && pod install && cd ..
+
+# Install Detox CLI globally
+yarn global add detox-cli
+
+# Verify Detox installation
+detox --version
+```
+
+### Running iOS Tests Locally on macOS
+
+**Step 1: Start Metro** (in a new terminal)
+```bash
+cd detox-demo
+yarn start
+```
+
+**Step 2: Build the iOS App**
+```bash
+yarn detox:build:ios
+```
+
+**Step 3: Run iOS Tests**
+```bash
+yarn detox:test:ios
+```
+
+Or run both build and test in one command:
+```bash
+yarn detox:ios
+```
+
+### Running Android Tests Locally on macOS
+
+**Step 1: Start Android Emulator**
+```bash
+# List available AVDs
+emulator -list-avds
+
+# Start an AVD (replace with your AVD name)
+emulator -avd Pixel_5_API_33
+```
+
+**Step 2: Start Metro** (in a new terminal)
+```bash
+cd detox-demo
+yarn start
+```
+
+**Step 3: Build the Android App**
+```bash
+yarn detox:build:android
+```
+
+**Step 4: Run Android Tests**
+```bash
+yarn detox:test:android
+```
+
+### Troubleshooting on macOS
+
+**Issue: `pod install` fails**
+- Update CocoaPods: `gem update cocoapods`
+- Clear CocoaPods cache: `pod cache clean --all`
+- Delete `ios/Pods` and `ios/Podfile.lock`, then run `pod install` again
+
+**Issue: Xcode build fails**
+- Ensure Xcode Command Line Tools are installed: `xcode-select --install`
+- Open iOS project in Xcode and verify signing/team settings
+- Clean build: `cd ios && xcodebuild clean && cd ..`
+
+**Issue: Simulator not found**
+- Open Xcode → Settings → Platforms → Download the required iOS simulator
+- List available simulators: `xcrun simctl list devices`
+
+**Issue: Android emulator won't start**
+- Ensure Intel HAXM or ARM64 support is enabled
+- Check if another emulator/VM is running
+- Try: `emulator -avd <AVD_NAME> -gpu host`
+
+**Issue: Metro bundler connection issues**
+- Kill any existing Metro processes: `pkill -f metro`
+- Clear Metro cache: `yarn start --reset-cache`
+
+### Allure Reporting on macOS
+
+```bash
+# Install Allure CLI for local report generation
+brew install allure
+
+# Generate and view reports locally after running tests
+allure generate allure-results --clean -o allure-report
+allure open allure-report
+```
 
 ## Setup for Windows 11 Local Development
 
@@ -448,16 +724,7 @@ yarn detox:android
 **Workaround:**
 You can still run Detox Android tests on Windows 11, but Allure reports will not be generated or viewable for those runs. For full Allure reporting, use iOS testing on macOS.
 
-
-
-```bash
-# Install Allure CLI for local report generation
-brew install allure
-
-# Generate and view reports locally after running tests
-allure generate allure-results --clean -o allure-report
-allure open allure-report
-```
+## Build and Run Tests
 
 ### Build the DetoxDemo app
 
@@ -467,7 +734,7 @@ To Build the app, you could do it the long way in Detox CLI:
 Or you can use the shortcuts set up in the package.json: 
 * yarn detox:build:ios
 
-### Run the Tests
+### Run iOS Tests
 
 **Step 1: Start Metro**
 
@@ -532,7 +799,7 @@ All 5 tests should pass:
 - Secure Area Flow: 2 tests
 - Login Flow: 3 tests
 
-### Optional: Debug using Detox REPL
+### Debug using Detox REPL (Optional)
 
 Detox has a REPL mode, a Run - Evaluate - Print Loop where you can investigate your running app. For more information, see [Wix Detox: Debugging with Detox REPL](https://wix.github.io/Detox/docs/guide/detox-repl)
 
@@ -548,7 +815,7 @@ Some things you can do in REPL Mode:
 .help      Print this help message
 ```
 
-### View the Reults
+### View the Results
 
 You should see your new app running in iOS Simulator or Android Emulator.
 
@@ -608,6 +875,21 @@ It takes 30 minutes to build the Detox app and 10 minutes to set up the simulato
 - **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
 - **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
 - **Live Reports**: Publishes test results to GitHub Pages for easy access
+
+### Security Scanning with Snyk
+
+The project includes a security scanning workflow ([security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml)) that uses [Snyk](https://snyk.io) to scan for vulnerabilities in dependencies and code.
+
+**Features:**
+- **Dependency Scanning**: Checks `package.json` and `yarn.lock` for vulnerable npm packages
+- **Static Application Security Testing (SAST)**: Scans source code for security issues
+- **GitHub Code Scanning Integration**: Results appear in the repository's Security tab
+
+**Setup Required:**
+The `SNYK_TOKEN` is stored in **GitHub Settings** → **Secrets and variables** → **Actions** as a repository secret. To set up your own:
+1. Sign up at [snyk.io](https://snyk.io) (free for open source)
+2. Go to **Account Settings** → **API Token** and copy your token
+3. Add it as a repository secret named `SNYK_TOKEN`
 
 
 # Troubleshooting

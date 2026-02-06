@@ -1,3 +1,4 @@
+// Created by GitHub Copilot
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
@@ -78,6 +79,8 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.detoxdemo"
+    testNamespace "com.detoxdemo.test"
+    
     defaultConfig {
         applicationId "com.detoxdemo"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -128,10 +131,6 @@ android {
             it.systemProperties['junit.jupiter.extensions.autodetection.enabled'] = 'true'
         }
     }
-
-    defaultConfig {
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
 }
 
 dependencies {
@@ -144,9 +143,6 @@ dependencies {
         implementation jscFlavor
     }
 
-    // Detox testing framework - included in main app for WebSocket server initialization
-    implementation("com.wix:detox:+")
-    
     // Test dependencies
     androidTestImplementation("com.wix:detox:+")
     androidTestImplementation("junit:junit:4.12")

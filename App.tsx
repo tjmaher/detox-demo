@@ -1,4 +1,6 @@
 /**
+ * Created by GitHub Copilot
+ * 
  * Login Demo App for Detox Testing
  * Based on https://the-internet.herokuapp.com/login
  *

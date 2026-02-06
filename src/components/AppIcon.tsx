@@ -1,3 +1,6 @@
+/**
+ * Created by GitHub Copilot
+ */
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -12,7 +15,6 @@ const AppIcon: React.FC<{ size?: number }> = ({ size = 120 }) => {
       
       {/* Small Detox checkmark indicator */}
       <View style={[styles.checkmark, { 
-        position: 'absolute',
         bottom: size * 0.08, 
         right: size * 0.08,
         width: size * 0.2,
@@ -49,6 +51,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   checkmark: {
+    position: 'absolute',
     backgroundColor: '#34C759',
     justifyContent: 'center',
     alignItems: 'center',

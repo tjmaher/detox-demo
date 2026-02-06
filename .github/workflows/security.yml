@@ -1,3 +1,13 @@
+# Security Scan Workflow
+#
+# SNYK_TOKEN Setup:
+#   The SNYK_TOKEN secret is stored in GitHub Settings → Secrets and variables → Actions
+#   To get your own token:
+#     1. Sign up at https://snyk.io (free for open source)
+#     2. Go to Account Settings → API Token
+#     3. Copy your token
+#     4. Add it as a repository secret named SNYK_TOKEN
+
 name: "Security Scan"
 
 permissions:

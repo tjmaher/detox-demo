@@ -1,4 +1,4 @@
-# Detox Demo - React Native iOS App
+# Detox Demo - React Native iOS + Android App
 
 DetoxDemo is a working React Native demo app running on both the iPhone and Android mobile devices that gives examples of:
 * [Mobile automation tests](https://github.com/tjmaher/detox-demo/blob/main/e2e/login.test.ts) written in Detox + TypeScript 
@@ -9,6 +9,7 @@ DetoxDemo is a working React Native demo app running on both the iPhone and Andr
 * For iOS: detox-allure2-adapter set up in [.detoxrc.js](https://github.com/tjmaher/detox-demo/blob/main/.detoxrc.js) and the [e2e/jest.config.js](https://github.com/tjmaher/detox-demo/blob/main/e2e/jest.config.js) (Allure Reports not working for Android)
 * For iOS: [Allure Reports](https://tjmaher.github.io/detox-demo/ios/) configured to show historical data
 * For [iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) and [Android](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/android-regression.yml) emulators, CI/CD that triggers tests to run after every pull request is submitted, provided by GitHub Action Workflows 
+* A security scanning workflow ([security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml)) that uses [Snyk](https://snyk.io) to scan for vulnerabilities in dependencies and code. Yes, the username (tomsmith) and password (SuperSecretPassword!) are in plain text in our [e2e/credentials](https://github.com/tjmaher/detox-demo/blob/main/e2e/credentials.ts) file, but only because this is a demo project. 
 * A working React Native mobile app for iOS and Android [complete with source code](https://github.com/tjmaher/detox-demo/tree/main/src)
 * A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
 * Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
@@ -175,7 +176,9 @@ detox-demo/
 │
 ├── .github/
 │   └── workflows/
-│       └── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
+│       ├── android-regression.yml # CI/CD pipeline for Android emulator testing
+│       ├── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
+│       └── security.yml          # Snyk security scanning for vulnerabilities
 │
 ├── ios/                          # iOS native project files and Xcode configuration
 │   ├── build/                    # Xcode build output (generated)
@@ -184,6 +187,20 @@ detox-demo/
 │   └── DetoxDemo/
 │       └── Images.xcassets/
 │           └── AppIcon.appiconset/ # Custom app icons
+│
+├── android/                      # Android native project files and Gradle configuration
+│   ├── app/
+│   │   ├── build.gradle          # App-level Gradle build configuration
+│   │   └── src/
+│   │       ├── main/
+│   │       │   ├── AndroidManifest.xml
+│   │       │   └── res/          # Android resources (icons, layouts, etc.)
+│   │       └── androidTest/
+│   │           └── java/com/detoxdemo/
+│   │               └── DetoxTest.java  # Detox test bootstrapping for Android
+│   ├── build.gradle              # Project-level Gradle configuration
+│   ├── gradle.properties         # Gradle settings
+│   └── gradlew                   # Gradle wrapper script
 │
 ├── scripts/
 │   └── generate-tj-icon.js       # Icon generation script 
@@ -195,8 +212,8 @@ detox-demo/
 │   ├── attachments/              # Device logs from failed tests
 │   └── ios.sim.debug.*/          # Per-test-run artifacts (screenshots, videos, logs)
 │
-├── allure-results/              # Allure test results JSON files
-├── allure-report/               # Generated Allure HTML reports (local and CI)
+├── allure-results/              # Allure test results JSON files (generated)
+├── allure-report/               # Generated Allure HTML reports (generated)
 │
 ├── node_modules/                # Node.js dependencies 
 ├── .detoxrc.js                  # Detox configuration targeting iPhone 16 Pro simulator
@@ -287,7 +304,7 @@ For more information, visit [CocoaPods Getting Started guide](https://guides.coc
 
    **See official Detox documentation:**
    - [Create required files](https://wix.github.io/Detox/docs/introduction/project-setup/#create-required-files)
-     ```
+
 5. **Metro must be running before tests:**
    - Start Metro: `yarn start` (in a separate terminal)
 6. Build and test:
@@ -548,7 +565,7 @@ Some things you can do in REPL Mode:
 .help      Print this help message
 ```
 
-### View the Reults
+### View the Results
 
 You should see your new app running in iOS Simulator or Android Emulator.
 
@@ -608,6 +625,21 @@ It takes 30 minutes to build the Detox app and 10 minutes to set up the simulato
 - **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
 - **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
 - **Live Reports**: Publishes test results to GitHub Pages for easy access
+
+### Security Scanning with Snyk
+
+The project includes a security scanning workflow ([security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml)) that uses [Snyk](https://snyk.io) to scan for vulnerabilities in dependencies and code.
+
+**Features:**
+- **Dependency Scanning**: Checks `package.json` and `yarn.lock` for vulnerable npm packages
+- **Static Application Security Testing (SAST)**: Scans source code for security issues
+- **GitHub Code Scanning Integration**: Results appear in the repository's Security tab
+
+**Setup Required:**
+The `SNYK_TOKEN` is stored in **GitHub Settings** → **Secrets and variables** → **Actions** as a repository secret. To set up your own:
+1. Sign up at [snyk.io](https://snyk.io) (free for open source)
+2. Go to **Account Settings** → **API Token** and copy your token
+3. Add it as a repository secret named `SNYK_TOKEN`
 
 
 # Troubleshooting

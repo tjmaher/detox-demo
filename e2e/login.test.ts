@@ -21,7 +21,6 @@ describe('Login Flow: ', () => {
   });
 
   afterEach(async () => {
-    await device.reloadReactNative();
     BasePage.collectTestResult();
   });
 

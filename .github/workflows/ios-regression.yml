@@ -90,10 +90,10 @@ on:
         description: 'Capture screenshots?'
         required: true
         type: choice
-        default: 'failing'
+        default: 'all'
         options:
-          - 'failing'
           - 'all'
+          - 'failing'
           - 'none'
       capture_video:
         description: 'Capture video?'
@@ -393,7 +393,7 @@ jobs:
           # Set artifact capture settings from workflow inputs (defaults for automated runs)
           LOG_LEVEL="${{ github.event.inputs.logger_level || 'info' }}"
           CAPTURE_LOGS="${{ github.event.inputs.capture_logs || 'failing' }}"
-          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || 'failing' }}"
+          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || 'all' }}"
           CAPTURE_VIDEO="${{ github.event.inputs.capture_video || 'none' }}"
           RECORD_PERFORMANCE="${{ github.event.inputs.record_performance || 'none' }}"
           
@@ -666,6 +666,7 @@ jobs:
           # Test Environment Configuration
           Platform=iOS
           Device=${{ github.event.inputs.device || 'iPhone 16 Pro' }}
+          iOS.Version=${{ github.event.inputs.os_version || '18.2' }}
           Test.Suite=${{ github.event.inputs.test_suite || 'all' }}
           Node.Version=$(node --version)
           Detox.Version=$(yarn list --pattern detox --depth=0 | grep detox@ | sed 's/.*detox@//')

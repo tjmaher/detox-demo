@@ -46,8 +46,8 @@ module.exports = {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone 16 Pro',
-        os: 'iOS 18.6'
+        type: process.env.DETOX_DEVICE_TYPE || 'iPhone 16 Pro',
+        os: process.env.DETOX_DEVICE_OS || 'iOS 18.2'
       }
     },
     emulator: {

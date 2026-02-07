@@ -51,6 +51,18 @@ on:
           - 'iPad mini (6th generation)'
           - 'iPad Air (5th generation)'
           - 'iPad Pro (12.9-inch) (6th generation)'
+      os_version:
+        description: 'Select iOS version to run tests on'
+        required: true
+        type: choice
+        default: '18.2'
+        options:
+          - '17.0.1'
+          - '17.2'
+          - '17.4'
+          - '17.5'
+          - '18.1'
+          - '18.2'
       logger_level:
         description: 'Log levels - most to least verbose'
         required: true
@@ -198,7 +210,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.6'
+            -destination "platform=iOS Simulator,name=${{ github.event.inputs.device }},OS=${{ github.event.inputs.os_version }}"
           
           cd ..
           

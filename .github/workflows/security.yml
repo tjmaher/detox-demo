@@ -19,9 +19,9 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  schedule:
-    # Run weekly on Sundays at midnight
-    # - cron: '0 0 * * 0'
+  # Uncomment to run weekly security scans on Sundays at midnight
+  # schedule:
+  #   - cron: '0 0 * * 0'
   workflow_dispatch:
 
 jobs:

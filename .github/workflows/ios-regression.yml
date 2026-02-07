@@ -51,6 +51,18 @@ on:
           - 'iPad mini (6th generation)'
           - 'iPad Air (5th generation)'
           - 'iPad Pro (12.9-inch) (6th generation)'
+      os_version:
+        description: 'Select iOS version to run tests on'
+        required: true
+        type: choice
+        default: '18.2'
+        options:
+          - '17.0.1'
+          - '17.2'
+          - '17.4'
+          - '17.5'
+          - '18.1'
+          - '18.2'
       logger_level:
         description: 'Log levels - most to least verbose'
         required: true
@@ -104,7 +116,7 @@ on:
 jobs:
   # Setup and Build
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     outputs:
       build-success: ${{ steps.build-app.outcome }}
     
@@ -113,6 +125,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+
+      # Use Xcode 16 for iPhone 16 simulator support
+      - name: Select Xcode version
+        run: |
+          echo "Available Xcode versions:"
+          ls /Applications/ | grep Xcode
+          # Use Xcode 16.x for iPhone 16 simulator support
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          echo "Selected Xcode: $(xcode-select -p)"
+          xcodebuild -version
 
       - name: Setup Homebrew
         run: |
@@ -169,10 +194,16 @@ jobs:
           # List available simulators for debugging
           echo "Available iOS simulators:"
           xcrun simctl list devices available | grep "iPhone"
+
+          # List available os for debugging
+          echo "Available iOS versions:"
+          xcrun simctl list runtimes
           
           # Build the iOS app without Metro (React Native handles bundling)
           echo "Building iOS app with embedded JS bundle..."
           cd ios
+          DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
           xcodebuild \
             -workspace DetoxDemo.xcworkspace \
             -scheme DetoxDemo \
@@ -181,7 +212,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest'
+            -destination "platform=iOS Simulator,name=$DEVICE_NAME,OS=$OS_VERSION"
           
           cd ..
           
@@ -202,7 +233,7 @@ jobs:
 
   # Stage 2: Run Tests, if build succeeds
   test:
-    runs-on: macos-latest
+    runs-on: macos-14
     needs: build
     if: needs.build.outputs.build-success == 'success'
     outputs:
@@ -213,6 +244,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
+
+      # Use Xcode 16 for iPhone 16 simulator support (must match build job)
+      - name: Select Xcode version
+        run: |
+          echo "Available Xcode versions:"
+          ls /Applications/ | grep Xcode
+          # Use Xcode 16.x for iPhone 16 simulator support
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          echo "Selected Xcode: $(xcode-select -p)"
+          xcodebuild -version
+          # Show available simulators for debugging
+          echo "Available iOS simulators:"
+          xcrun simctl list devices available | head -50
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -281,17 +328,38 @@ jobs:
           done
           
           # Pre-generate the initial bundle before tests start
-          echo "Pre-generating initial JavaScript bundle..."
-          curl -s "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" > /dev/null || true
-          echo "Waiting for bundle generation to complete..."
-          sleep 20
+          # This is critical - the app will timeout if bundle isn't ready
+          echo "Pre-generating initial JavaScript bundle (this may take 30-60 seconds)..."
+          BUNDLE_START=$(date +%s)
           
-          # Verify bundle is available
-          echo "Verifying bundle availability..."
-          if curl -s "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then
-            echo "✅ Bundle is ready!"
+          # Actually download the full bundle and wait for it to complete
+          # Using --max-time to prevent hanging, -f to fail on HTTP errors
+          if curl -sf --max-time 120 "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" -o /tmp/bundle.js; then
+            BUNDLE_SIZE=$(wc -c < /tmp/bundle.js)
+            BUNDLE_END=$(date +%s)
+            BUNDLE_TIME=$((BUNDLE_END - BUNDLE_START))
+            echo "✅ Bundle generated successfully!"
+            echo "   Size: $BUNDLE_SIZE bytes"
+            echo "   Time: ${BUNDLE_TIME}s"
+            rm /tmp/bundle.js
           else
-            echo "⚠️  Bundle may not be fully ready, but continuing..."
+            echo "⚠️ Bundle generation may have failed, but continuing..."
+          fi
+          
+          # Request bundle again to ensure it's cached
+          echo "Warming up bundle cache..."
+          curl -sf --max-time 60 "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" > /dev/null || true
+          
+          # Give Metro a moment to stabilize after bundle generation
+          echo "Waiting for Metro to stabilize..."
+          sleep 5
+          
+          # Verify bundle is available and cached
+          echo "Verifying bundle availability..."
+          if curl -sf --max-time 10 "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then
+            echo "✅ Bundle is ready and cached!"
+          else
+            echo "⚠️ Bundle verification failed, tests may timeout!"
           fi
           
           # List available simulators
@@ -346,8 +414,7 @@ jobs:
               --record-logs "$CAPTURE_LOGS" \
               --take-screenshots "$CAPTURE_SCREENSHOTS" \
               --record-videos "$CAPTURE_VIDEO" \
-              --record-performance "$RECORD_PERFORMANCE" \
-              || echo "Tests completed with failures"
+              --record-performance "$RECORD_PERFORMANCE"
           else
             echo "Running specific test: ${{ github.event.inputs.test_suite }}"
             yarn detox test e2e/${{ github.event.inputs.test_suite }} \
@@ -357,8 +424,7 @@ jobs:
               --record-logs "$CAPTURE_LOGS" \
               --take-screenshots "$CAPTURE_SCREENSHOTS" \
               --record-videos "$CAPTURE_VIDEO" \
-              --record-performance "$RECORD_PERFORMANCE" \
-              || echo "Tests completed with failures"
+              --record-performance "$RECORD_PERFORMANCE"
           fi
           
           # Check if allure-results has content
@@ -387,9 +453,21 @@ jobs:
             allure-results/
           retention-days: 7
 
+      - name: Check test results
+        if: always()
+        run: |
+          if [ "${{ steps.run-tests.outcome }}" == "failure" ]; then
+            echo "❌ Tests failed! Check the test output above for details."
+            exit 1
+          elif [ "${{ steps.run-tests.outcome }}" == "success" ]; then
+            echo "✅ All tests passed!"
+          else
+            echo "⚠️ Test outcome: ${{ steps.run-tests.outcome }}"
+          fi
+
   # Stage 3: Generate Allure Reports, only if tests complete
   publish-allure-report:
-    runs-on: macos-latest
+    runs-on: macos-14
     needs: [build, test]
     if: always() && needs.build.outputs.build-success == 'success'
     
@@ -681,7 +759,7 @@ jobs:
 
   # Stage 4: Cleanup
   cleanup:
-    runs-on: macos-latest
+    runs-on: macos-14
     needs: [build, test, publish-allure-report]
     if: always()
     

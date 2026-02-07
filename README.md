@@ -100,7 +100,7 @@ If you find this project helpful, feel free to copy it and use it for your own e
 ### Test Reporting
 - **Allure Reports**: Comprehensive test reports with visual artifacts for debugging
 - **Live Results**: View test execution results at https://tjmaher.github.io/detox-demo/ios/
-- **CI Integration**: Automated report generation on GitHub Actions with iPhone 16 Pro simulator
+- **CI Integration**: Automated report generation on GitHub Actions with iPhone 16 simulator
 - **Failure Artifacts**: Screenshots, videos, and logs captured
 
 ## Test Credentials
@@ -278,7 +278,7 @@ detox-demo/
 ├── allure-report/               # Generated Allure HTML reports (generated)
 │
 ├── node_modules/                # Node.js dependencies 
-├── .detoxrc.js                  # Detox configuration targeting iPhone 16 Pro simulator
+├── .detoxrc.js                  # Detox configuration targeting iPhone 16 simulator
 ├── jest.config.js               # React Native unit tests configuration
 ├── package.json                 # Dependencies and yarn scripts for detox:ios commands
 ├── yarn.lock                    # Locked dependency versions
@@ -871,7 +871,7 @@ It takes 30 minutes to build the Detox app and 10 minutes to set up the simulato
 
 ### Key Features
 - **Triggered on**: Push to main, pull requests, manual dispatch with test suite selection
-- **iPhone 16 Pro Focus**: Uses iPhone 16 Pro simulator if default is selected
+- **iPhone 16 Focus**: Uses iPhone 16 simulator if default is selected
 - **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
 - **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
 - **Live Reports**: Publishes test results to GitHub Pages for easy access

@@ -239,7 +239,7 @@ detox-demo/
 ├── .github/
 │   └── workflows/
 │       ├── android-regression.yml # CI/CD pipeline for Android emulator testing
-│       ├── ios-regression.yml    # CI/CD pipeline with iPhone 16 simulator
+│       ├── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
 │       └── security.yml          # Snyk security scanning for vulnerabilities
 │
 ├── ios/                          # iOS native project files and Xcode configuration
@@ -292,7 +292,7 @@ detox-demo/
 ### Prerequisites
 - Node.js (>= 20)
 - Xcode (for iOS development)
-- iOS Simulator (such as iPhone 16, used in this project)
+- iOS Simulator (such as iPhone 16 Pro, used in this project)
 - React Native development environment ([Setup Guide](https://reactnative.dev/docs/set-up-your-environment))
 - Homebrew (for macOS dependencies)
 
@@ -864,8 +864,8 @@ The GitHub Actions Workflow Pipeline is configured by [.github/workflows/ios-reg
 It takes 30 minutes to build the Detox app and 10 minutes to set up the simulator and run all tests. 
 
 ### Pipeline Stages
-1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for default iPhone 16 simulator
-2. **Test Stage**: Boots default iPhone 16 simulator running Detox tests collecting artifacts such as screenshots, videos, logs
+1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for default iPhone 16 Pro simulator
+2. **Test Stage**: Boots default iPhone 16 Pro simulator running Detox tests collecting artifacts such as screenshots, videos, logs
 3. **Allure Report Stage**: Generates HTML test reports, deploying to GitHub Pages at https://tjmaher.github.io/detox-demo/ios/
 4. **Cleanup Stage**: Removes temporary files and shuts down simulators
 

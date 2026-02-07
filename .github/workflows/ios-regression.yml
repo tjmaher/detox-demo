@@ -71,50 +71,50 @@ on:
           - 'iPad mini (6th generation)'
           - 'iPad Air (5th generation)'
           - 'iPad Pro (12.9-inch) (6th generation)'
-      
-      os_version:
-        description: 'Select iOS version to run tests on'
-        required: true
-        type: choice
-        default: '18.2'
-        options:
-          - '17.0.1'
-          - '17.2'
-          - '17.4'
-          - '17.5'
-          - '18.1'
-          - '18.2'
-      
-      logger_level:
-        description: 'Log levels - most to least verbose'
-        required: true
-        type: choice
-        default: 'info'
-        options:
-          - 'trace'
-          - 'debug'
-          - 'verbose'
-          - 'info'
-          - 'warn'
-          - 'error'
-          - 'fatal'
-      
-      # Test Artifact Capture Controls
-      capture_logs:
-        description: 'Capture test logs?'
-        required: true
-        type: choice
-        default: 'all'
-        options:
-          - 'all'
-          - 'failing'
-          - 'none'
-      
-      capture_screenshots:
-        description: 'Capture screenshots?'
-        required: true
-        type: choice
-        default: 'all'
+    jobs:
+      build:
+        runs-on: macos-latest
+        outputs:
+          app-path: ${{ steps.build.outputs.app-path }}
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+          - name: Set up Node.js
+            uses: actions/setup-node@v3
+            with:
+              node-version: 18
+          - name: Install dependencies
+            run: yarn install --frozen-lockfile
+          - name: Install CocoaPods
+            run: sudo gem install cocoapods
+          - name: Install pods
+            run: cd ios && pod install
+          - name: Build iOS app
+            id: build
+            run: |
+              xcodebuild -workspace ios/DetoxDemo.xcworkspace -scheme DetoxDemo -configuration Release -sdk iphonesimulator -derivedDataPath ios/build
+              echo "::set-output name=app-path::ios/build/Build/Products/Release-iphonesimulator/DetoxDemo.app"
+          - name: Upload app artifact
+            uses: actions/upload-artifact@v3
+            with:
+              name: DetoxDemo.app
+              path: ios/build/Build/Products/Release-iphonesimulator/DetoxDemo.app
+      test:
+        needs: build
+        runs-on: macos-latest
+        steps:
+          - name: Download app artifact
+            uses: actions/download-artifact@v3
+            with:
+              name: DetoxDemo.app
+          - name: Set up Node.js
+            uses: actions/setup-node@v3
+            with:
+              node-version: 18
+          - name: Install dependencies
+            run: yarn install --frozen-lockfile
+          - name: Run Detox tests
+            run: yarn detox:test:ios
         options:
           - 'all'
           - 'failing'
@@ -215,11 +215,9 @@ build:
     timeout-minutes: 30
     permissions:
       contents: read
-    
     outputs:
       build-success: ${{ steps.build-app.outcome }}
       build-path: ${{ steps.build-app.outputs.build_path }}
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

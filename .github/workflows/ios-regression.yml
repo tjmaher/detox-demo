@@ -43,10 +43,10 @@ on:
         description: 'Select iOS device to run tests on'
         required: true
         type: choice
-        default: 'iPhone 16 Pro'
+        default: 'iPhone 16'
         options:
           - 'iPhone 16'
-          - 'iPhone 16 Pro'
+          - 'iPhone 16 Plus'
           - 'iPhone 16 Pro Max'
           - 'iPad mini (6th generation)'
           - 'iPad Air (5th generation)'
@@ -119,7 +119,7 @@ jobs:
         run: |
           echo "Available Xcode versions:"
           ls /Applications/ | grep Xcode
-          # Use Xcode 16.x for iPhone 16 Pro simulator support
+          # Use Xcode 16.x for iPhone 16 simulator support
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer || \
           sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
           sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || \
@@ -194,7 +194,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest'
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest'
           
           cd ..
           
@@ -232,7 +232,7 @@ jobs:
         run: |
           echo "Available Xcode versions:"
           ls /Applications/ | grep Xcode
-          # Use Xcode 16.x for iPhone 16 Pro simulator support
+          # Use Xcode 16.x for iPhone 16 simulator support
           sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer || \
           sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
           sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || \
@@ -285,8 +285,8 @@ jobs:
           mkdir -p allure-results
           mkdir -p artifacts
           
-          # Set device from workflow input or default to iPhone 16 Pro for automated runs
-          DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          # Set device from workflow input or default to iPhone 16 for automated runs
+          DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16' }}"
           echo "Running tests on device: $DEVICE_NAME"
           
           # Start Metro bundler for tests
@@ -647,7 +647,7 @@ jobs:
           cat > allure-results/environment.properties << EOF
           # Test Environment Configuration
           Platform=iOS
-          Device=${{ github.event.inputs.device || 'iPhone 16 Pro' }}
+          Device=${{ github.event.inputs.device || 'iPhone 16' }}
           Test.Suite=${{ github.event.inputs.test_suite || 'all' }}
           Node.Version=$(node --version)
           Detox.Version=$(yarn list --pattern detox --depth=0 | grep detox@ | sed 's/.*detox@//')

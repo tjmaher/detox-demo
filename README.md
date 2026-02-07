@@ -100,7 +100,7 @@ If you find this project helpful, feel free to copy it and use it for your own e
 ### Test Reporting
 - **Allure Reports**: Comprehensive test reports with visual artifacts for debugging
 - **Live Results**: View test execution results at https://tjmaher.github.io/detox-demo/ios/
-- **CI Integration**: Automated report generation on GitHub Actions with iPhone 16 Pro simulator
+- **CI Integration**: Automated report generation on GitHub Actions with iPhone 16 simulator
 - **Failure Artifacts**: Screenshots, videos, and logs captured
 
 ## Test Credentials
@@ -239,7 +239,7 @@ detox-demo/
 ├── .github/
 │   └── workflows/
 │       ├── android-regression.yml # CI/CD pipeline for Android emulator testing
-│       ├── ios-regression.yml    # CI/CD pipeline with iPhone 16 Pro simulator
+│       ├── ios-regression.yml    # CI/CD pipeline with iPhone 16 simulator
 │       └── security.yml          # Snyk security scanning for vulnerabilities
 │
 ├── ios/                          # iOS native project files and Xcode configuration
@@ -278,7 +278,7 @@ detox-demo/
 ├── allure-report/               # Generated Allure HTML reports (generated)
 │
 ├── node_modules/                # Node.js dependencies 
-├── .detoxrc.js                  # Detox configuration targeting iPhone 16 Pro simulator
+├── .detoxrc.js                  # Detox configuration targeting iPhone 16 simulator
 ├── jest.config.js               # React Native unit tests configuration
 ├── package.json                 # Dependencies and yarn scripts for detox:ios commands
 ├── yarn.lock                    # Locked dependency versions
@@ -292,7 +292,7 @@ detox-demo/
 ### Prerequisites
 - Node.js (>= 20)
 - Xcode (for iOS development)
-- iOS Simulator (such as iPhone 16 Pro, used in this project)
+- iOS Simulator (such as iPhone 16, used in this project)
 - React Native development environment ([Setup Guide](https://reactnative.dev/docs/set-up-your-environment))
 - Homebrew (for macOS dependencies)
 
@@ -864,14 +864,14 @@ The GitHub Actions Workflow Pipeline is configured by [.github/workflows/ios-reg
 It takes 30 minutes to build the Detox app and 10 minutes to set up the simulator and run all tests. 
 
 ### Pipeline Stages
-1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for default iPhone 16 Pro simulator
-2. **Test Stage**: Boots default iPhone 16 Pro simulator running Detox tests collecting artifacts such as screenshots, videos, logs
+1. **Build Stage**: Sets up macOS environment, installs dependencies (Node.js 20, Ruby 3.2, CocoaPods), and builds the iOS app for default iPhone 16 simulator
+2. **Test Stage**: Boots default iPhone 16 simulator running Detox tests collecting artifacts such as screenshots, videos, logs
 3. **Allure Report Stage**: Generates HTML test reports, deploying to GitHub Pages at https://tjmaher.github.io/detox-demo/ios/
 4. **Cleanup Stage**: Removes temporary files and shuts down simulators
 
 ### Key Features
 - **Triggered on**: Push to main, pull requests, manual dispatch with test suite selection
-- **iPhone 16 Pro Focus**: Uses iPhone 16 Pro simulator if default is selected
+- **iPhone 16 Focus**: Uses iPhone 16 simulator if default is selected
 - **Failure Handling**: Each stage only runs if prerequisites succeed, with proper error handling
 - **Visual Artifacts**: Captures screenshots and videos using Wix's [detox-allure2-adapter](https://github.com/wix-incubator/detox-allure2-adapter)
 - **Live Reports**: Publishes test results to GitHub Pages for easy access

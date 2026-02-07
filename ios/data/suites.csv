@@ -1,6 +1,0 @@
-"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","17284","Logging out from Secure Area returns to Login Page displaying Success Message","","2026-02-07","passed","2026-02-07","","Secure Area Flow: ","",""
-"","11652","Successful login to Secure Area displays success message","","2026-02-07","passed","2026-02-07","","Login Flow: ","",""
-"","15756","Verify all Secure Area elements","","2026-02-07","passed","2026-02-07","","Secure Area Flow: ","",""
-"","16034","Invalid credentials displays error message inside an error banner","","2026-02-07","passed","2026-02-07","","Login Flow: ","",""
-"","2161","Verify Heading and Instruction Text","","2026-02-07","passed","2026-02-07","","Login Flow: ","",""

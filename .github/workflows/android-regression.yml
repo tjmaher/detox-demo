@@ -118,6 +118,7 @@ jobs:
   # =============================================================================
   # Stage 0: Input Validation
   # =============================================================================
+  
   validate-inputs:
     name: Validate Workflow Inputs
     runs-on: ubuntu-latest
@@ -165,6 +166,7 @@ jobs:
   # =============================================================================
   # Stage 1: Build Android Application
   # =============================================================================
+  
   build:
     name: Build Android App
     runs-on: ubuntu-latest
@@ -292,6 +294,7 @@ jobs:
   # =============================================================================
   # Stage 2: Run E2E Tests
   # =============================================================================
+  
   test:
     name: Run E2E Tests
     runs-on: ubuntu-latest
@@ -554,6 +557,7 @@ jobs:
   # =============================================================================
   # Stage 3: Generate and Publish Allure Report
   # =============================================================================
+  
   publish-allure-report:
     name: Publish Test Report
     runs-on: ubuntu-latest
@@ -709,7 +713,7 @@ jobs:
             "buildOrder": ${{ github.run_number }},
             "buildName": "Android Detox Tests #${{ github.run_number }}",
             "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-            "reportUrl": "https://tjmaher.github.io/detox-demo/android/",
+            "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/android/",
             "reportName": "Allure Report"
           }
           EOF
@@ -836,7 +840,7 @@ jobs:
           echo "=== Report Publishing Summary ==="
           
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            REPORT_URL="https://tjmaher.github.io/detox-demo/android/"
+            REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/android/"
             echo "✅ Report published to GitHub Pages"
             echo "🔗 URL: $REPORT_URL"
           else
@@ -847,6 +851,7 @@ jobs:
   # =============================================================================
   # Stage 4: Cleanup and Summary
   # =============================================================================
+  
   cleanup:
     name: Cleanup & Summary
     runs-on: ubuntu-latest
@@ -894,7 +899,7 @@ jobs:
           
           # Report status
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            REPORT_URL="https://tjmaher.github.io/detox-demo/android/"
+            REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/android/"
             echo "📊 **Report:** [View Allure Report]($REPORT_URL)" >> $GITHUB_STEP_SUMMARY
           else
             echo "📊 **Report:** Available in artifacts" >> $GITHUB_STEP_SUMMARY

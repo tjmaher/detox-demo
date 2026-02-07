@@ -71,50 +71,28 @@ on:
           - 'iPad mini (6th generation)'
           - 'iPad Air (5th generation)'
           - 'iPad Pro (12.9-inch) (6th generation)'
-    jobs:
-      build:
-        runs-on: macos-latest
-        outputs:
-          app-path: ${{ steps.build.outputs.app-path }}
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v3
-          - name: Set up Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version: 18
-          - name: Install dependencies
-            run: yarn install --frozen-lockfile
-          - name: Install CocoaPods
-            run: sudo gem install cocoapods
-          - name: Install pods
-            run: cd ios && pod install
-          - name: Build iOS app
-            id: build
-            run: |
-              xcodebuild -workspace ios/DetoxDemo.xcworkspace -scheme DetoxDemo -configuration Release -sdk iphonesimulator -derivedDataPath ios/build
-              echo "::set-output name=app-path::ios/build/Build/Products/Release-iphonesimulator/DetoxDemo.app"
-          - name: Upload app artifact
-            uses: actions/upload-artifact@v3
-            with:
-              name: DetoxDemo.app
-              path: ios/build/Build/Products/Release-iphonesimulator/DetoxDemo.app
-      test:
-        needs: build
-        runs-on: macos-latest
-        steps:
-          - name: Download app artifact
-            uses: actions/download-artifact@v3
-            with:
-              name: DetoxDemo.app
-          - name: Set up Node.js
-            uses: actions/setup-node@v3
-            with:
-              node-version: 18
-          - name: Install dependencies
-            run: yarn install --frozen-lockfile
-          - name: Run Detox tests
-            run: yarn detox:test:ios
+      
+      os_version:
+        description: 'iOS version to use'
+        required: true
+        type: string
+        default: '18.2'
+      
+      capture_logs:
+        description: 'Capture test logs?'
+        required: true
+        type: choice
+        default: 'failing'
+        options:
+          - 'failing'
+          - 'all'
+          - 'none'
+      
+      capture_screenshots:
+        description: 'Capture screenshots?'
+        required: true
+        type: choice
+        default: 'all'
         options:
           - 'all'
           - 'failing'
@@ -138,45 +116,41 @@ on:
         options:
           - 'none'
           - 'all'
+      
+      logger_level:
+        description: 'Detox logger level'
+        required: true
+        type: choice
+        default: 'info'
+        options:
+          - 'trace'
+          - 'debug'
+          - 'info'
+          - 'warn'
+          - 'error'
 
 jobs:
-    # Simple build step for iOS app before Detox tests
-    build-simple:
-      name: Build iOS App (Simple)
-      runs-on: macos-14
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
-        - name: Build iOS app
-          run: |
-            cd ios
-            xcodebuild \
-              -workspace DetoxDemo.xcworkspace \
-              -scheme DetoxDemo \
-              -configuration Debug \
-              -sdk iphonesimulator \
-              -derivedDataPath build
   # =============================================================================
   # Stage 0: Input Validation
   # =============================================================================
   
-validate-inputs:
-    name: Validate Workflow Inputs
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
+  validate-inputs:
+    name: Validate Inputs
+    runs-on: macos-14
+    timeout-minutes: 5
     permissions:
       contents: read
     
     steps:
-      - name: Validate inputs
+      - name: Validate and sanitize inputs
         run: |
           echo "=== Validating Workflow Inputs ==="
           
-          # Validate OS version format (should be X.Y or X.Y.Z)
+          # Validate iOS version format (must be X.Y or X.Y.Z)
           OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
-          if [[ ! "$OS_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-            echo "❌ Invalid OS version format: $OS_VERSION"
-            echo "   Expected format: X.Y or X.Y.Z (e.g., 18.2 or 17.0.1)"
+          if ! echo "$OS_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "❌ ERROR: Invalid iOS version format: $OS_VERSION"
+            echo "   Expected format: X.Y or X.Y.Z (e.g., 18.2 or 18.2.1)"
             exit 1
           fi
           
@@ -207,7 +181,7 @@ validate-inputs:
   # Stage 1: Build iOS Application
   # =============================================================================
   
-build:
+  build:
     name: Build iOS App
     runs-on: macos-14
     needs: validate-inputs
@@ -218,6 +192,7 @@ build:
     outputs:
       build-success: ${{ steps.build-app.outcome }}
       build-path: ${{ steps.build-app.outputs.build_path }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -423,7 +398,8 @@ build:
   # =============================================================================
   # Stage 2: Run E2E Tests
   # =============================================================================
-test:
+  
+  test:
     name: Run E2E Tests
     runs-on: macos-14
     needs: build
@@ -775,7 +751,8 @@ test:
   # =============================================================================
   # Stage 3: Generate and Publish Allure Report
   # =============================================================================
-publish-allure-report:
+  
+  publish-allure-report:
     name: Publish Test Report
     runs-on: macos-14
     needs: [build, test]
@@ -1065,7 +1042,8 @@ publish-allure-report:
   # =============================================================================
   # Stage 4: Cleanup and Summary
   # =============================================================================
-cleanup:
+  
+  cleanup:
     name: Cleanup & Summary
     runs-on: macos-14
     needs: [build, test, publish-allure-report]

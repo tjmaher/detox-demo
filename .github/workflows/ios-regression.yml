@@ -1,33 +1,52 @@
 name: "Build & Test iOS"
 
-permissions:
-  contents: write
-  packages: read
-  id-token: write
-  pages: write 
-  actions: read
+# Permissions scoped per job for security
+permissions: {}
 
-# Define default artifact capture settings for entire workflow
+# Global configuration constants
 env:
+  # Application Configuration
+  APP_NAME: 'DetoxDemo'
+  WORKSPACE_NAME: 'DetoxDemo'
+  SCHEME_NAME: 'DetoxDemo'
+  
+  # Timeouts (in seconds)
+  METRO_STARTUP_TIMEOUT: 60
+  METRO_HEALTHCHECK_TIMEOUT: 120
+  BUNDLE_GENERATION_TIMEOUT: 180
+  SIMULATOR_BOOT_TIMEOUT: 30
+  
+  # Artifact Retention
+  BUILD_ARTIFACT_RETENTION_DAYS: 1
+  TEST_ARTIFACT_RETENTION_DAYS: 7
+  REPORT_ARTIFACT_RETENTION_DAYS: 30
+  
+  # Default Test Artifact Capture Settings
   DEFAULT_LOG_LEVEL: 'info'
   DEFAULT_CAPTURE_LOGS: 'failing'
   DEFAULT_CAPTURE_SCREENSHOTS: 'all'
   DEFAULT_CAPTURE_VIDEO: 'failing'
   DEFAULT_RECORD_PERFORMANCE: 'none'
+  
+  # Node/Metro Configuration
+  NODE_VERSION: '20'
+  METRO_PORT: 8081
 
 on:
-  # Run all tests when changes are pushed onto the main branch
+  # Run all tests when changes are pushed to main branch
   push:
     branches: [ main ]
   
-  # Run all tests before being merged to main, when branches are opened or synchronized
+  # Run all tests on PRs targeting main
   pull_request:
     branches: [ main ]
 
-  # Run all tests every day at 10:00 PM EST
+  # Nightly automated test runs at 10:00 PM EST (3:00 AM UTC)
+  # Uncomment to enable scheduled runs
   # schedule:
-  #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
+  #   - cron: '0 3 * * *'
   
+  # Manual workflow trigger with full configuration options
   workflow_dispatch:
     inputs:
       test_suite:
@@ -39,6 +58,7 @@ on:
           - 'all'
           - 'login.test.ts'
           - 'secure-area.test.ts'
+      
       device:
         description: 'Select iOS device to run tests on'
         required: true
@@ -51,6 +71,7 @@ on:
           - 'iPad mini (6th generation)'
           - 'iPad Air (5th generation)'
           - 'iPad Pro (12.9-inch) (6th generation)'
+      
       os_version:
         description: 'Select iOS version to run tests on'
         required: true
@@ -63,6 +84,7 @@ on:
           - '17.5'
           - '18.1'
           - '18.2'
+      
       logger_level:
         description: 'Log levels - most to least verbose'
         required: true
@@ -76,16 +98,18 @@ on:
           - 'warn'
           - 'error'
           - 'fatal'
-      # Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)
+      
+      # Test Artifact Capture Controls
       capture_logs:
         description: 'Capture test logs?'
         required: true
         type: choice
-        default: 'failing'
+        default: 'all'
         options:
-          - 'failing'
           - 'all'
+          - 'failing'
           - 'none'
+      
       capture_screenshots:
         description: 'Capture screenshots?'
         required: true
@@ -95,6 +119,7 @@ on:
           - 'all'
           - 'failing'
           - 'none'
+      
       capture_video:
         description: 'Capture video?'
         required: true
@@ -104,6 +129,7 @@ on:
           - 'none'
           - 'failing'
           - 'all'
+      
       record_performance:
         description: 'Detox Instruments performance? (iOS only)'
         required: true
@@ -114,11 +140,67 @@ on:
           - 'all'
 
 jobs:
-  # Setup and Build
+  # =============================================================================
+  # Stage 0: Input Validation
+  # =============================================================================
+  validate-inputs:
+    name: Validate Workflow Inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Validate inputs
+        run: |
+          echo "=== Validating Workflow Inputs ==="
+          
+          # Validate OS version format (should be X.Y or X.Y.Z)
+          OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
+          if [[ ! "$OS_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "❌ Invalid OS version format: $OS_VERSION"
+            echo "   Expected format: X.Y or X.Y.Z (e.g., 18.2 or 17.0.1)"
+            exit 1
+          fi
+          
+          # Sanitize device name (remove any potentially dangerous characters)
+          DEVICE_RAW="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          DEVICE_SAFE=$(echo "$DEVICE_RAW" | tr -cd '[:alnum:] ().-')
+          if [ "$DEVICE_RAW" != "$DEVICE_SAFE" ]; then
+            echo "⚠️  Device name contains invalid characters"
+            echo "   Original: $DEVICE_RAW"
+            echo "   Sanitized: $DEVICE_SAFE"
+          fi
+          
+          # Sanitize test suite name
+          TEST_SUITE_RAW="${{ github.event.inputs.test_suite || 'all' }}"
+          TEST_SUITE_SAFE=$(echo "$TEST_SUITE_RAW" | tr -cd '[:alnum:].-')
+          if [ "$TEST_SUITE_RAW" != "$TEST_SUITE_SAFE" ]; then
+            echo "⚠️  Test suite name contains invalid characters"
+            echo "   Original: $TEST_SUITE_RAW"
+            echo "   Sanitized: $TEST_SUITE_SAFE"
+          fi
+          
+          echo "✅ All inputs validated successfully"
+          echo "   Device: $DEVICE_SAFE"
+          echo "   iOS Version: $OS_VERSION"
+          echo "   Test Suite: $TEST_SUITE_SAFE"
+
+  # =============================================================================
+  # Stage 1: Build iOS Application
+  # =============================================================================
   build:
+    name: Build iOS App
     runs-on: macos-14
+    needs: validate-inputs
+    if: always() && needs.validate-inputs.result == 'success'
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    
     outputs:
       build-success: ${{ steps.build-app.outcome }}
+      build-path: ${{ steps.build-app.outputs.build_path }}
     
     steps:
       - name: Checkout repository
@@ -126,24 +208,44 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      # Use Xcode 16 for iPhone 16 simulator support
       - name: Select Xcode version
+        id: select-xcode
         run: |
-          echo "Available Xcode versions:"
-          ls /Applications/ | grep Xcode
-          # Use Xcode 16.x for iPhone 16 simulator support
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          echo "Selected Xcode: $(xcode-select -p)"
+          echo "=== Selecting Xcode Version ==="
+          echo "Available Xcode installations:"
+          ls /Applications/ | grep Xcode || echo "No Xcode installations found"
+          
+          # Try to select Xcode 16.x for iPhone 16 simulator support
+          XCODE_SELECTED=false
+          
+          for XCODE_VERSION in 16.2 16.1 16.0; do
+            XCODE_PATH="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+            if [ -d "$XCODE_PATH" ]; then
+              echo "Found Xcode $XCODE_VERSION, selecting..."
+              sudo xcode-select -s "$XCODE_PATH"
+              XCODE_SELECTED=true
+              break
+            fi
+          done
+          
+          # Fallback to default Xcode if no specific version found
+          if [ "$XCODE_SELECTED" = false ]; then
+            if [ -d "/Applications/Xcode.app/Contents/Developer" ]; then
+              echo "Using default Xcode installation..."
+              sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+              XCODE_SELECTED=true
+            fi
+          fi
+          
+          # Verify Xcode was selected
+          if [ "$XCODE_SELECTED" = false ]; then
+            echo "❌ ERROR: No compatible Xcode installation found"
+            echo "Required: Xcode 16.x or later for iPhone 16 simulator support"
+            exit 1
+          fi
+          
+          echo "✅ Selected Xcode: $(xcode-select -p)"
           xcodebuild -version
-
-      - name: Setup Homebrew
-        run: |
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
-          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
-          eval "$(/opt/homebrew/bin/brew shellenv)"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -151,72 +253,142 @@ jobs:
           ruby-version: '3.2'
           bundler-cache: true
 
-      - name: Cache Homebrew and RubyGems
-        uses: actions/cache@v3
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
         with:
           path: |
-            /opt/homebrew/Cellar
-            /opt/homebrew/lib
-            ~/.gem
-          key: ${{ runner.os }}-homebrew-gems-${{ hashFiles('**/Gemfile.lock', '**/Brewfile') }}
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
-            ${{ runner.os }}-homebrew-gems-
+            ${{ runner.os }}-pods-
 
-      - name: Setup Node.js for React Native & Detox
+      - name: Cache Homebrew packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/homebrew/Cellar/applesimutils
+            /opt/homebrew/lib/applesimutils
+          key: ${{ runner.os }}-homebrew-${{ hashFiles('.github/workflows/*.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
 
-      - name: Clean lock file conflicts
-        run: rm -f package-lock.json
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Install JavaScript dependencies
+        run: |
+          echo "=== Installing JavaScript Dependencies ==="
+          # Remove any conflicting lock files
+          rm -f package-lock.json
+          
+          # Install with frozen lockfile for reproducibility
+          yarn install --frozen-lockfile
+          
+          echo "✅ JavaScript dependencies installed"
 
       - name: Install CocoaPods dependencies
         run: |
+          echo "=== Installing CocoaPods Dependencies ==="
           cd ios
-          gem install cocoapods
+          
+          # Ensure CocoaPods is installed
+          gem install cocoapods --no-document
+          
+          # Install pods with repo update
           pod install --repo-update
+          
+          echo "✅ CocoaPods dependencies installed"
 
       - name: Install Applesimutils
         run: |
-          eval "$(/opt/homebrew/bin/brew shellenv)"
+          echo "=== Installing Applesimutils ==="
+          
+          # Check if already installed
+          if command -v applesimutils &> /dev/null; then
+            echo "✅ Applesimutils already installed"
+            applesimutils --version
+            exit 0
+          fi
+          
+          # Install via Homebrew
           brew tap wix/brew
           brew install applesimutils
+          
+          echo "✅ Applesimutils installed"
+          applesimutils --version
 
-      - name: Build Detox for iOS
+      - name: List available simulators
+        run: |
+          echo "=== Available iOS Simulators ==="
+          xcrun simctl list devices available --json | jq -r '
+            .devices | 
+            to_entries[] | 
+            select(.key | contains("iOS")) | 
+            .value[] | 
+            "\(.name) - \(.udid) (iOS \(
+              (.key | capture("iOS (?<version>[0-9.]+)").version) // "unknown"
+            ))"
+          ' || xcrun simctl list devices available | grep "iPhone\|iPad"
+          
+          echo ""
+          echo "=== Available iOS Runtimes ==="
+          xcrun simctl list runtimes
+
+      - name: Build iOS app
         id: build-app
         run: |
-          echo "Building React Native app for Detox testing..."
+          echo "=== Building iOS Application ==="
           
-          # List available simulators for debugging
-          echo "Available iOS simulators:"
-          xcrun simctl list devices available | grep "iPhone"
-
-          # List available os for debugging
-          echo "Available iOS versions:"
-          xcrun simctl list runtimes
-          
-          # Build the iOS app without Metro (React Native handles bundling)
-          echo "Building iOS app with embedded JS bundle..."
-          cd ios
+          # Set build configuration
           DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
           OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
+          
+          echo "Build Configuration:"
+          echo "  App: ${{ env.APP_NAME }}"
+          echo "  Workspace: ${{ env.WORKSPACE_NAME }}"
+          echo "  Scheme: ${{ env.SCHEME_NAME }}"
+          echo "  Device: $DEVICE_NAME"
+          echo "  iOS Version: $OS_VERSION"
+          echo ""
+          
+          # Build the iOS app
+          cd ios
           xcodebuild \
-            -workspace DetoxDemo.xcworkspace \
-            -scheme DetoxDemo \
+            -workspace "${{ env.WORKSPACE_NAME }}.xcworkspace" \
+            -scheme "${{ env.SCHEME_NAME }}" \
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath build \
+            -destination "platform=iOS Simulator,name=$DEVICE_NAME,OS=$OS_VERSION" \
             CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            -destination "platform=iOS Simulator,name=$DEVICE_NAME,OS=$OS_VERSION"
+            | tee build.log
           
+          BUILD_EXIT_CODE=${PIPEFAIL[0]}
           cd ..
           
-          echo "Build completed successfully"
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "❌ Build failed with exit code $BUILD_EXIT_CODE"
+            echo "Check build.log for details"
+            exit $BUILD_EXIT_CODE
+          fi
+          
+          # Verify build output
+          BUILD_PATH="ios/build/Build/Products/Debug-iphonesimulator/${{ env.APP_NAME }}.app"
+          if [ ! -d "$BUILD_PATH" ]; then
+            echo "❌ ERROR: Build artifact not found at $BUILD_PATH"
+            exit 1
+          fi
+          
+          echo "✅ Build completed successfully"
+          echo "build_path=$BUILD_PATH" >> $GITHUB_OUTPUT
+          
+          # Display build artifact info
+          ls -lh "$BUILD_PATH/" | head -20
         env:
           CI: true
           NODE_ENV: development
@@ -227,17 +399,25 @@ jobs:
         with:
           name: ios-build-${{ github.run_id }}
           path: |
-            ios/build/
+            ios/build/Build/Products/Debug-iphonesimulator/
             node_modules/.bin/detox
-          retention-days: 1
+          retention-days: ${{ env.BUILD_ARTIFACT_RETENTION_DAYS }}
+          compression-level: 6
 
-  # Stage 2: Run Tests, if build succeeds
+  # =============================================================================
+  # Stage 2: Run E2E Tests
+  # =============================================================================
   test:
+    name: Run E2E Tests
     runs-on: macos-14
     needs: build
     if: needs.build.outputs.build-success == 'success'
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    
     outputs:
-      test-results: ${{ steps.run-tests.outcome }}
+      test-outcome: ${{ steps.run-tests.outcome }}
     
     steps:
       - name: Checkout repository
@@ -245,26 +425,32 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      # Use Xcode 16 for iPhone 16 simulator support (must match build job)
       - name: Select Xcode version
         run: |
-          echo "Available Xcode versions:"
-          ls /Applications/ | grep Xcode
-          # Use Xcode 16.x for iPhone 16 simulator support
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          echo "Selected Xcode: $(xcode-select -p)"
+          echo "=== Selecting Xcode Version ==="
+          # Must match build job Xcode version
+          XCODE_SELECTED=false
+          
+          for XCODE_VERSION in 16.2 16.1 16.0; do
+            XCODE_PATH="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+            if [ -d "$XCODE_PATH" ]; then
+              sudo xcode-select -s "$XCODE_PATH"
+              XCODE_SELECTED=true
+              break
+            fi
+          done
+          
+          if [ "$XCODE_SELECTED" = false ]; then
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          fi
+          
+          echo "✅ Selected Xcode: $(xcode-select -p)"
           xcodebuild -version
-          # Show available simulators for debugging
-          echo "Available iOS simulators:"
-          xcrun simctl list devices available | head -50
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
 
       - name: Install dependencies
@@ -274,174 +460,290 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ios-build-${{ github.run_id }}
-          
+          path: ios/build/Build/Products/Debug-iphonesimulator/
+
       - name: Verify build artifacts
         run: |
-          echo "Verifying iOS app build..."
-          ls -la ios/build/Build/Products/Debug-iphonesimulator/
+          echo "=== Verifying Build Artifacts ==="
           
-          # Check if .app exists
-          if [ -d "ios/build/Build/Products/Debug-iphonesimulator/DetoxDemo.app" ]; then
-            echo "✅ DetoxDemo.app found"
-            ls -la ios/build/Build/Products/Debug-iphonesimulator/DetoxDemo.app/
-          else
-            echo "❌ ERROR: DetoxDemo.app not found!"
+          APP_PATH="ios/build/Build/Products/Debug-iphonesimulator/${{ env.APP_NAME }}.app"
+          
+          if [ ! -d "$APP_PATH" ]; then
+            echo "❌ ERROR: App bundle not found at $APP_PATH"
+            echo "Available files:"
+            ls -la ios/build/Build/Products/Debug-iphonesimulator/ || echo "Directory not found"
             exit 1
           fi
+          
+          echo "✅ App bundle verified: $APP_PATH"
+          echo "App bundle contents:"
+          ls -lh "$APP_PATH/" | head -10
+          
+          # Verify app binary exists
+          if [ ! -f "$APP_PATH/${{ env.APP_NAME }}" ]; then
+            echo "❌ ERROR: App binary not found in bundle"
+            exit 1
+          fi
+          
+          echo "✅ App binary verified"
 
       - name: Install Applesimutils
         run: |
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-          brew tap wix/brew
-          brew install applesimutils
+          if ! command -v applesimutils &> /dev/null; then
+            brew tap wix/brew
+            brew install applesimutils
+          fi
+          applesimutils --version
 
-      - name: Run Detox e2e tests
-        id: run-tests
-        continue-on-error: true
+      - name: Find and boot simulator
+        id: boot-simulator
         run: |
-          # Create directories explicitly
-          mkdir -p allure-results
-          mkdir -p artifacts
+          echo "=== Finding and Booting Simulator ==="
           
-          # Set device from workflow input or default to iPhone 16 Pro for automated runs
           DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
-          echo "Running tests on device: $DEVICE_NAME"
+          OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
           
-          # Start Metro bundler for tests
-          echo "Starting Metro bundler for test execution..."
-          yarn start --reset-cache &
-          METRO_PID=$!
+          echo "Target device: $DEVICE_NAME (iOS $OS_VERSION)"
           
-          # Wait for Metro to be ready with healthcheck
-          echo "Waiting for Metro bundler to start..."
-          sleep 15
+          # Use JSON output for robust parsing
+          SIMULATOR_DATA=$(xcrun simctl list devices -j)
           
-          # Verify Metro is responding
-          echo "Checking Metro health..."
-          for i in {1..60}; do
-            if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then
-              echo "Metro is ready!"
-              break
-            fi
-            echo "Waiting for Metro... attempt $i/60"
-            sleep 2
-          done
+          # Find matching simulator
+          SIMULATOR_ID=$(echo "$SIMULATOR_DATA" | jq -r --arg name "$DEVICE_NAME" '
+            .devices | 
+            to_entries[] | 
+            select(.key | contains("iOS")) |
+            .value[] | 
+            select(.name == $name and .isAvailable == true) | 
+            .udid
+          ' | head -1)
           
-          # Pre-generate the initial bundle before tests start
-          # This is critical - the app will timeout if bundle isn't ready
-          echo "Pre-generating initial JavaScript bundle (this may take 30-60 seconds)..."
-          BUNDLE_START=$(date +%s)
-          
-          # Actually download the full bundle and wait for it to complete
-          # Using --max-time to prevent hanging, -f to fail on HTTP errors
-          if curl -sf --max-time 120 "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" -o /tmp/bundle.js; then
-            BUNDLE_SIZE=$(wc -c < /tmp/bundle.js)
-            BUNDLE_END=$(date +%s)
-            BUNDLE_TIME=$((BUNDLE_END - BUNDLE_START))
-            echo "✅ Bundle generated successfully!"
-            echo "   Size: $BUNDLE_SIZE bytes"
-            echo "   Time: ${BUNDLE_TIME}s"
-            rm /tmp/bundle.js
-          else
-            echo "⚠️ Bundle generation may have failed, but continuing..."
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "❌ ERROR: Could not find simulator matching '$DEVICE_NAME'"
+            echo "Available simulators:"
+            echo "$SIMULATOR_DATA" | jq -r '.devices | to_entries[] | .value[] | "\(.name) - \(.udid)"'
+            exit 1
           fi
           
-          # Request bundle again to ensure it's cached
-          echo "Warming up bundle cache..."
-          curl -sf --max-time 60 "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" > /dev/null || true
+          echo "✅ Found simulator: $SIMULATOR_ID"
+          echo "simulator_id=$SIMULATOR_ID" >> $GITHUB_OUTPUT
           
-          # Give Metro a moment to stabilize after bundle generation
-          echo "Waiting for Metro to stabilize..."
-          sleep 5
+          # Check if already booted
+          STATE=$(xcrun simctl list devices -j | jq -r --arg id "$SIMULATOR_ID" '
+            .devices[][] | select(.udid == $id) | .state
+          ')
           
-          # Verify bundle is available and cached
-          echo "Verifying bundle availability..."
-          if curl -sf --max-time 10 "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then
-            echo "✅ Bundle is ready and cached!"
+          if [ "$STATE" = "Booted" ]; then
+            echo "ℹ️  Simulator already booted"
           else
-            echo "⚠️ Bundle verification failed, tests may timeout!"
-          fi
-          
-          # List available simulators
-          echo "Available iOS simulators:"
-          xcrun simctl list devices available
-          
-          # Find and boot the selected simulator
-          echo "Looking for $DEVICE_NAME simulator..."
-          SIMULATOR_ID=$(xcrun simctl list devices | grep "$DEVICE_NAME" | head -1 | grep -o '[A-Z0-9-]\{36\}')
-          
-          if [ ! -z "$SIMULATOR_ID" ]; then
-            echo "Found $DEVICE_NAME simulator: $SIMULATOR_ID"
-            echo "Booting $DEVICE_NAME..."
-            xcrun simctl boot "$SIMULATOR_ID" || echo "Simulator already booted"
+            echo "Booting simulator..."
+            xcrun simctl boot "$SIMULATOR_ID"
             
-            # Wait for simulator to be fully booted
-            echo "Waiting for simulator to boot completely..."
-            sleep 10
+            # Wait for boot to complete with timeout
+            BOOT_TIMEOUT=${{ env.SIMULATOR_BOOT_TIMEOUT }}
+            ELAPSED=0
             
-            until xcrun simctl bootstatus "$SIMULATOR_ID" | grep -q "Device already booted"; do
-              echo "Waiting for simulator to finish booting..."
+            while [ $ELAPSED -lt $BOOT_TIMEOUT ]; do
+              if xcrun simctl bootstatus "$SIMULATOR_ID" 2>&1 | grep -q "Device already booted"; then
+                echo "✅ Simulator booted successfully"
+                break
+              fi
               sleep 2
+              ELAPSED=$((ELAPSED + 2))
             done
             
-            echo "Simulator ready!"
-            xcrun simctl list devices | grep "$SIMULATOR_ID"
+            if [ $ELAPSED -ge $BOOT_TIMEOUT ]; then
+              echo "⚠️  Boot verification timeout, continuing anyway..."
+            fi
           fi
           
-          echo "Starting Detox tests on $DEVICE_NAME with Metro running..."
+          # Display simulator info
+          xcrun simctl list devices -j | jq -r --arg id "$SIMULATOR_ID" '
+            .devices[][] | select(.udid == $id)
+          '
+
+      - name: Start Metro bundler
+        id: start-metro
+        run: |
+          echo "=== Starting Metro Bundler ==="
           
-          # Set artifact capture settings from workflow inputs (defaults for automated runs)
-          LOG_LEVEL="${{ github.event.inputs.logger_level || 'info' }}"
-          CAPTURE_LOGS="${{ github.event.inputs.capture_logs || 'failing' }}"
-          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || 'all' }}"
-          CAPTURE_VIDEO="${{ github.event.inputs.capture_video || 'none' }}"
-          RECORD_PERFORMANCE="${{ github.event.inputs.record_performance || 'none' }}"
+          # Start Metro in background with logging
+          yarn start --reset-cache > metro.log 2>&1 &
+          METRO_PID=$!
           
-          echo "Test configuration:"
-          echo "  Device: $DEVICE_NAME"
-          echo "  Log level: $LOG_LEVEL"
-          echo "  Capture logs: $CAPTURE_LOGS"
-          echo "  Capture screenshots: $CAPTURE_SCREENSHOTS"
-          echo "  Capture video: $CAPTURE_VIDEO"
-          echo "  Record performance: $RECORD_PERFORMANCE"
+          echo "Metro PID: $METRO_PID"
+          echo "metro_pid=$METRO_PID" >> $GITHUB_OUTPUT
           
-          # Run Detox tests with artifact settings
-          if [ "${{ github.event.inputs.test_suite }}" == "all" ] || [ -z "${{ github.event.inputs.test_suite }}" ]; then
-            echo "Running all Detox tests..."
-            yarn detox:test:ios \
-              --loglevel "$LOG_LEVEL" \
-              --artifacts-location artifacts \
-              --record-logs "$CAPTURE_LOGS" \
-              --take-screenshots "$CAPTURE_SCREENSHOTS" \
-              --record-videos "$CAPTURE_VIDEO" \
-              --record-performance "$RECORD_PERFORMANCE"
+          # Setup cleanup trap
+          trap "echo 'Cleaning up Metro...'; kill $METRO_PID 2>/dev/null || true" EXIT
+          
+          # Wait for Metro to be ready with exponential backoff
+          echo "Waiting for Metro to start..."
+          TIMEOUT=${{ env.METRO_STARTUP_TIMEOUT }}
+          ELAPSED=0
+          RETRY_DELAY=2
+          
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            if curl -sf --max-time 5 "http://localhost:${{ env.METRO_PORT }}/status" | grep -q "packager-status:running"; then
+              echo "✅ Metro is running"
+              break
+            fi
+            
+            echo "Waiting for Metro... (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $RETRY_DELAY
+            ELAPSED=$((ELAPSED + RETRY_DELAY))
+            
+            # Exponential backoff
+            if [ $RETRY_DELAY -lt 10 ]; then
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            fi
+          done
+          
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "❌ ERROR: Metro failed to start within ${TIMEOUT}s"
+            echo "Metro log:"
+            cat metro.log
+            exit 1
+          fi
+          
+          echo "✅ Metro bundler ready"
+
+      - name: Pre-generate JavaScript bundle
+        run: |
+          echo "=== Pre-generating JavaScript Bundle ==="
+          
+          # This prevents test timeout by ensuring bundle is ready before tests start
+          BUNDLE_START=$(date +%s)
+          BUNDLE_TIMEOUT=${{ env.BUNDLE_GENERATION_TIMEOUT }}
+          
+          echo "Generating bundle (timeout: ${BUNDLE_TIMEOUT}s)..."
+          
+          if curl -sf \
+            --max-time $BUNDLE_TIMEOUT \
+            "http://localhost:${{ env.METRO_PORT }}/index.bundle?platform=ios&dev=true&minify=false" \
+            -o /tmp/bundle.js; then
+            
+            BUNDLE_END=$(date +%s)
+            BUNDLE_TIME=$((BUNDLE_END - BUNDLE_START))
+            BUNDLE_SIZE=$(wc -c < /tmp/bundle.js | tr -d ' ')
+            BUNDLE_SIZE_MB=$(echo "scale=2; $BUNDLE_SIZE / 1048576" | bc)
+            
+            echo "✅ Bundle generated successfully"
+            echo "   Time: ${BUNDLE_TIME}s"
+            echo "   Size: ${BUNDLE_SIZE_MB}MB"
+            
+            rm /tmp/bundle.js
           else
-            echo "Running specific test: ${{ github.event.inputs.test_suite }}"
-            yarn detox test e2e/${{ github.event.inputs.test_suite }} \
-              --configuration ios.sim.debug \
-              --loglevel "$LOG_LEVEL" \
-              --artifacts-location artifacts \
-              --record-logs "$CAPTURE_LOGS" \
-              --take-screenshots "$CAPTURE_SCREENSHOTS" \
-              --record-videos "$CAPTURE_VIDEO" \
-              --record-performance "$RECORD_PERFORMANCE"
+            echo "❌ ERROR: Bundle generation failed or timed out"
+            echo "Metro may not be responding correctly"
+            exit 1
           fi
           
-          # Check if allure-results has content
-          echo "Checking allure-results directory..."
-          ls -la allure-results/ || echo "allure-results is empty"
-          find allure-results -type f -name "*.json" -print0 | xargs -0 wc -l || echo "Failed to count JSON files in allure-results"
+          # Verify bundle is cached and available
+          echo "Verifying bundle cache..."
+          if curl -sf --max-time 10 \
+            "http://localhost:${{ env.METRO_PORT }}/index.bundle?platform=ios&dev=true&minify=false" \
+            | head -c 100 | grep -q "sourceMappingURL"; then
+            echo "✅ Bundle is cached and ready"
+          else
+            echo "⚠️  Bundle verification failed, tests may be slower"
+          fi
+
+      - name: Run Detox E2E tests
+        id: run-tests
+        run: |
+          echo "=== Running Detox E2E Tests ==="
           
-          # Stop Metro bundler after tests
-          echo "Stopping Metro bundler..."
-          kill $METRO_PID || true
+          # Create artifact directories
+          mkdir -p allure-results artifacts
           
-          echo "Detox tests completed on $DEVICE_NAME"
+          # Get test configuration from inputs or defaults
+          DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          TEST_SUITE="${{ github.event.inputs.test_suite || 'all' }}"
+          LOG_LEVEL="${{ github.event.inputs.logger_level || env.DEFAULT_LOG_LEVEL }}"
+          CAPTURE_LOGS="${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}"
+          CAPTURE_SCREENSHOTS="${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}"
+          CAPTURE_VIDEO="${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}"
+          RECORD_PERFORMANCE="${{ github.event.inputs.record_performance || env.DEFAULT_RECORD_PERFORMANCE }}"
+          
+          echo "Test Configuration:"
+          echo "  Device: $DEVICE_NAME"
+          echo "  iOS Version: $OS_VERSION"
+          echo "  Test Suite: $TEST_SUITE"
+          echo "  Log Level: $LOG_LEVEL"
+          echo "  Capture Logs: $CAPTURE_LOGS"
+          echo "  Capture Screenshots: $CAPTURE_SCREENSHOTS"
+          echo "  Capture Video: $CAPTURE_VIDEO"
+          echo "  Record Performance: $RECORD_PERFORMANCE"
+          echo ""
+          
+          # Build detox command
+          DETOX_CMD="yarn detox test"
+          
+          # Add test suite if specified
+          if [ "$TEST_SUITE" != "all" ]; then
+            DETOX_CMD="$DETOX_CMD e2e/$TEST_SUITE"
+          fi
+          
+          # Add configuration and options
+          DETOX_CMD="$DETOX_CMD \
+            --configuration ios.sim.debug \
+            --loglevel $LOG_LEVEL \
+            --artifacts-location artifacts \
+            --record-logs $CAPTURE_LOGS \
+            --take-screenshots $CAPTURE_SCREENSHOTS \
+            --record-videos $CAPTURE_VIDEO \
+            --record-performance $RECORD_PERFORMANCE"
+          
+          echo "Running command: $DETOX_CMD"
+          echo ""
+          
+          # Run tests and capture exit code
+          set +e
+          eval $DETOX_CMD
+          TEST_EXIT_CODE=$?
+          set -e
+          
+          # Report results
+          echo ""
+          echo "=== Test Execution Complete ==="
+          
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "✅ All tests passed"
+          else
+            echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
+          fi
+          
+          # Verify test results were generated
+          if [ -d "allure-results" ] && [ -n "$(ls -A allure-results/*.json 2>/dev/null)" ]; then
+            RESULT_COUNT=$(find allure-results -name "*.json" -type f | wc -l | tr -d ' ')
+            echo "Generated $RESULT_COUNT Allure result files"
+          else
+            echo "⚠️  No Allure results generated"
+          fi
+          
+          exit $TEST_EXIT_CODE
         env:
           DETOX_ENABLE_ALLURE: 'true'
           DETOX_CONFIGURATION: ios.sim.debug
           CI: true
-          RCT_METRO_PORT: 8081
+          RCT_METRO_PORT: ${{ env.METRO_PORT }}
+
+      - name: Stop Metro bundler
+        if: always()
+        run: |
+          echo "=== Stopping Metro Bundler ==="
+          METRO_PID="${{ steps.start-metro.outputs.metro_pid }}"
+          
+          if [ -n "$METRO_PID" ]; then
+            kill $METRO_PID 2>/dev/null || true
+            echo "✅ Metro bundler stopped"
+          else
+            echo "ℹ️  No Metro PID found"
+          fi
+          
+          # Also kill any orphaned Metro processes
+          pkill -f "react-native.*start" || true
 
       - name: Upload test artifacts
         if: always()
@@ -451,66 +753,62 @@ jobs:
           path: |
             artifacts/
             allure-results/
-          retention-days: 7
+          retention-days: ${{ env.TEST_ARTIFACT_RETENTION_DAYS }}
+          if-no-files-found: warn
 
-      - name: Check test results
-        if: always()
-        run: |
-          if [ "${{ steps.run-tests.outcome }}" == "failure" ]; then
-            echo "❌ Tests failed! Check the test output above for details."
-            exit 1
-          elif [ "${{ steps.run-tests.outcome }}" == "success" ]; then
-            echo "✅ All tests passed!"
-          else
-            echo "⚠️ Test outcome: ${{ steps.run-tests.outcome }}"
-          fi
-
-  # Stage 3: Generate Allure Reports, only if tests complete
+  # =============================================================================
+  # Stage 3: Generate and Publish Allure Report
+  # =============================================================================
   publish-allure-report:
+    name: Publish Test Report
     runs-on: macos-14
     needs: [build, test]
     if: always() && needs.build.outputs.build-success == 'success'
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Download test results
-        if: needs.test.outputs.test-results == 'success' || needs.test.outputs.test-results == 'failure'
         uses: actions/download-artifact@v4
         with:
           name: detox-test-results-${{ github.run_id }}
           path: .
         continue-on-error: true
 
-      - name: Verify downloaded artifacts
-        if: always()
+      - name: Verify test artifacts
+        id: verify-artifacts
         run: |
-          echo "=== Verifying downloaded test artifacts ==="
-          echo "Current directory structure:"
-          ls -la
+          echo "=== Verifying Test Artifacts ==="
           
-          echo ""
-          echo "Checking for artifacts directory:"
-          if [ -d "artifacts" ]; then
-            echo "✅ artifacts/ directory found"
-            ls -la artifacts/
-            find artifacts -type f | head -20
+          HAS_RESULTS=false
+          
+          if [ -d "allure-results" ] && [ -n "$(ls -A allure-results/*.json 2>/dev/null)" ]; then
+            RESULT_COUNT=$(find allure-results -name "*.json" -type f | wc -l | tr -d ' ')
+            echo "✅ Found $RESULT_COUNT Allure result files"
+            HAS_RESULTS=true
           else
-            echo "❌ artifacts/ directory NOT found"
+            echo "⚠️  No Allure results found"
+            echo "Creating minimal result set for empty report..."
+            mkdir -p allure-results
           fi
           
-          echo ""
-          echo "Checking for allure-results directory:"
-          if [ -d "allure-results" ]; then
-            echo "✅ allure-results/ directory found"
-            ls -la allure-results/
-            echo "JSON files: $(find allure-results -name '*.json' -type f | wc -l)"
+          echo "has_results=$HAS_RESULTS" >> $GITHUB_OUTPUT
+          
+          if [ -d "artifacts" ]; then
+            echo "✅ Found artifacts directory"
+            ARTIFACT_SIZE=$(du -sh artifacts/ 2>/dev/null | cut -f1 || echo '0')
+            echo "   Total size: $ARTIFACT_SIZE"
           else
-            echo "❌ allure-results/ directory NOT found"
+            echo "ℹ️  No artifacts directory (expected if tests passed with 'failing' capture mode)"
           fi
 
-      - name: Checkout GitHub Pages branch for history
+      - name: Checkout GitHub Pages for history
         uses: actions/checkout@v4
         if: always()
         continue-on-error: true
@@ -518,130 +816,93 @@ jobs:
           ref: gh-pages
           path: gh-pages-history
 
-      - name: Copy previous Allure history
+      - name: Copy Allure history
         if: always()
         continue-on-error: true
         run: |
-          echo "Copying Allure history from previous report..."
-          if [ -d "gh-pages-history/ios/history" ]; then
-            echo "Found previous history, copying to allure-results..."
-            mkdir -p allure-results/history
-            cp -r gh-pages-history/ios/history/* allure-results/history/ || true
-            echo "✅ History copied successfully"
-            ls -la allure-results/history/
-          else
-            echo "ℹ️  No previous history found, this will be the first report"
-          fi
-
-      - name: Setup Allure
-        run: |
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-          brew install allure
-
-      - name: Verify Allure installation
-        run: |
-          echo "Verifying Allure installation..."
-          allure --version
+          echo "=== Copying Allure History ==="
           
-          # DEBUG: Check what was actually created
-          echo "=== Checking for allure-results after test execution ==="
-          if [ -d "allure-results" ]; then
-            echo "✅ allure-results directory exists"
-            ls -laR allure-results/
-            echo "JSON file count: $(find allure-results -name '*.json' -type f | wc -l)"
+          if [ -d "gh-pages-history/ios/history" ]; then
+            mkdir -p allure-results/history
+            cp -r gh-pages-history/ios/history/* allure-results/history/
+            
+            HISTORY_FILES=$(ls -1 allure-results/history/ | wc -l | tr -d ' ')
+            echo "✅ Copied $HISTORY_FILES history files"
           else
-            echo "⚠️  allure-results directory does NOT exist - creating it"
-            mkdir -p allure-results
+            echo "ℹ️  No previous history found (first run)"
           fi
 
-      - name: Attach Detox artifacts to Allure results
+      - name: Install Allure
+        run: |
+          echo "=== Installing Allure ==="
+          brew install allure
+          allure --version
+
+      - name: Attach Detox artifacts to Allure
         if: always()
         run: |
-          echo "=== Processing Detox artifacts for Allure report ==="
+          echo "=== Attaching Artifacts to Allure Report ==="
           
-          # Create attachments directory
-          mkdir -p allure-results/attachments
-          
-          # Check if artifacts directory exists
           if [ ! -d "artifacts" ]; then
-            echo "⚠️  No artifacts directory found"
-            echo "This may occur if:"
-            echo "  - Tests didn't run"
-            echo "  - Artifacts weren't captured (check capture settings)"
-            echo "  - Artifact upload/download failed"
-            echo ""
-            echo "Current directory contents:"
-            ls -la
+            echo "ℹ️  No artifacts to attach"
             exit 0
           fi
           
-          echo "✅ Found artifacts directory"
-          echo "Processing artifact files..."
-          echo ""
+          mkdir -p allure-results/attachments
           
-          # Track what we find
           FOUND_ANY=false
           
-          # Copy screenshots
+          # Attach screenshots
           if find artifacts -name "*.png" -type f 2>/dev/null | grep -q .; then
-            echo "📸 Copying screenshots to Allure attachments..."
+            echo "📸 Attaching screenshots..."
             find artifacts -name "*.png" -type f -exec cp {} allure-results/attachments/ \;
-            SCREENSHOT_COUNT=$(find allure-results/attachments -name "*.png" -type f 2>/dev/null | wc -l | tr -d ' ')
-            echo "   ✅ Copied $SCREENSHOT_COUNT screenshots"
+            COUNT=$(find allure-results/attachments -name "*.png" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT screenshots"
             FOUND_ANY=true
-          else
-            echo "   ℹ️  No screenshots (capture_screenshots: ${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }})"
           fi
           
-          # Copy videos
+          # Attach videos
           if find artifacts -name "*.mp4" -type f 2>/dev/null | grep -q .; then
-            echo "🎥 Copying videos to Allure attachments..."
+            echo "🎥 Attaching videos..."
             find artifacts -name "*.mp4" -type f -exec cp {} allure-results/attachments/ \;
-            VIDEO_COUNT=$(find allure-results/attachments -name "*.mp4" -type f 2>/dev/null | wc -l | tr -d ' ')
-            echo "   ✅ Copied $VIDEO_COUNT videos"
+            COUNT=$(find allure-results/attachments -name "*.mp4" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT videos"
             FOUND_ANY=true
-          else
-            echo "   ℹ️  No videos (capture_video: ${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }})"
           fi
           
-          # Copy log files
+          # Attach logs
           if find artifacts -name "*.log" -type f 2>/dev/null | grep -q .; then
-            echo "📋 Copying logs to Allure attachments..."
+            echo "📋 Attaching logs..."
             find artifacts -name "*.log" -type f -exec cp {} allure-results/attachments/ \;
-            LOG_COUNT=$(find allure-results/attachments -name "*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
-            echo "   ✅ Copied $LOG_COUNT log files"
+            COUNT=$(find allure-results/attachments -name "*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT log files"
             FOUND_ANY=true
-          else
-            echo "   ℹ️  No logs (capture_logs: ${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }})"
           fi
           
-          # Copy performance traces (iOS only)
+          # Attach performance traces (iOS only)
           if find artifacts -name "*.trace" -type f 2>/dev/null | grep -q .; then
-            echo "📊 Copying performance traces to Allure attachments..."
+            echo "📊 Attaching performance traces..."
             find artifacts -name "*.trace" -type f -exec cp {} allure-results/attachments/ \;
-            TRACE_COUNT=$(find allure-results/attachments -name "*.trace" -type f 2>/dev/null | wc -l | tr -d ' ')
-            echo "   ✅ Copied $TRACE_COUNT performance traces"
+            COUNT=$(find allure-results/attachments -name "*.trace" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT performance traces"
             FOUND_ANY=true
-          else
-            echo "   ℹ️  No traces (record_performance: ${{ github.event.inputs.record_performance || env.DEFAULT_RECORD_PERFORMANCE }})"
           fi
           
-          echo ""
-          echo "=== Artifact Summary ==="
-          if [ "$FOUND_ANY" = true ]; then
-            echo "Attachments directory contents:"
-            ls -lh allure-results/attachments/ 2>/dev/null || echo "Empty"
-            TOTAL_SIZE=$(du -sh allure-results/attachments/ 2>/dev/null | cut -f1 || echo '0')
-            echo "Total attachment size: $TOTAL_SIZE"
+          if [ "$FOUND_ANY" = false ]; then
+            echo "ℹ️  No artifacts captured (normal when tests pass with 'failing' mode)"
           else
-            echo "⚠️  No artifacts were captured for this test run"
-            echo "This is expected when tests pass and capture settings are 'failing'"
+            TOTAL_SIZE=$(du -sh allure-results/attachments/ 2>/dev/null | cut -f1 || echo '0')
+            echo "Total attachments size: $TOTAL_SIZE"
           fi
 
-      - name: Generate Allure executor information
+      - name: Generate Allure metadata
         if: always()
         run: |
+          echo "=== Generating Allure Metadata ==="
+          
           mkdir -p allure-results
+          
+          # Executor information
           cat > allure-results/executor.json << EOF
           {
             "name": "GitHub Actions",
@@ -655,22 +916,22 @@ jobs:
           }
           EOF
           
-          echo "Executor information created:"
-          cat allure-results/executor.json
-
-      - name: Generate Allure environment properties
-        if: always()
-        run: |
-          mkdir -p allure-results
+          # Environment properties
+          # Sanitize commit message for properties file
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n 1 | tr '\n' ' ' | sed 's/[^a-zA-Z0-9 ._-]/_/g')
+          
           cat > allure-results/environment.properties << EOF
-          # Test Environment Configuration
+          # Test Environment
           Platform=iOS
           Device=${{ github.event.inputs.device || 'iPhone 16 Pro' }}
           iOS.Version=${{ github.event.inputs.os_version || '18.2' }}
           Test.Suite=${{ github.event.inputs.test_suite || 'all' }}
+          
+          # Framework Versions
           Node.Version=$(node --version)
-          Detox.Version=$(yarn list --pattern detox --depth=0 | grep detox@ | sed 's/.*detox@//')
-          React.Native.Version=$(node -p "require('./package.json').dependencies['react-native']")
+          Yarn.Version=$(yarn --version)
+          Detox.Version=$(yarn list --pattern detox --depth=0 2>/dev/null | grep detox@ | sed 's/.*detox@//' || echo 'unknown')
+          React.Native.Version=$(node -p "require('./package.json').dependencies['react-native']" 2>/dev/null || echo 'unknown')
           
           # Test Configuration
           Log.Level=${{ github.event.inputs.logger_level || env.DEFAULT_LOG_LEVEL }}
@@ -683,7 +944,7 @@ jobs:
           Branch=${{ github.ref_name }}
           Commit.SHA=${{ github.sha }}
           Commit.Author=${{ github.actor }}
-          Commit.Message=$(git log -1 --pretty=%B | head -n 1)
+          Commit.Message=$COMMIT_MSG
           Repository=${{ github.repository }}
           Workflow.Run.ID=${{ github.run_id }}
           Workflow.Run.Number=${{ github.run_number }}
@@ -692,64 +953,74 @@ jobs:
           Run.Date=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           EOF
           
-          echo "Environment properties created:"
-          cat allure-results/environment.properties
-
-      - name: Generate Allure categories
-        if: always()
-        run: |
-          mkdir -p allure-results
+          # Test categories for better failure classification
           cat > allure-results/categories.json << 'EOF'
           [
             {
-              "name": "Login Failures",
+              "name": "Login & Authentication Failures",
               "matchedStatuses": ["failed"],
-              "messageRegex": ".*login.*"
+              "messageRegex": ".*login.*|.*auth.*|.*credential.*"
             },
             {
               "name": "Timeout Issues",
               "matchedStatuses": ["failed", "broken"],
-              "messageRegex": ".*timeout.*"
+              "messageRegex": ".*timeout.*|.*timed out.*"
             },
             {
               "name": "Element Not Found",
               "matchedStatuses": ["failed"],
-              "messageRegex": ".*not found.*|.*unable to find.*"
+              "messageRegex": ".*not found.*|.*unable to find.*|.*does not exist.*"
+            },
+            {
+              "name": "Network & API Failures",
+              "matchedStatuses": ["failed", "broken"],
+              "messageRegex": ".*network.*|.*api.*|.*request.*|.*response.*"
             },
             {
               "name": "Infrastructure Issues",
               "matchedStatuses": ["broken"],
-              "messageRegex": ".*simulator.*|.*build.*|.*metro.*"
+              "messageRegex": ".*simulator.*|.*build.*|.*metro.*|.*bundler.*"
+            },
+            {
+              "name": "Test Framework Issues",
+              "matchedStatuses": ["broken"],
+              "messageRegex": ".*detox.*|.*jest.*|.*test.*setup.*"
             }
           ]
           EOF
-
-      - name: Generate Allure report from Detox results
-        run: |
-          echo "Generating Allure report with history..."
           
-          # Generate report - Allure will automatically use history from allure-results/history
+          echo "✅ Metadata generated"
+
+      - name: Generate Allure report
+        run: |
+          echo "=== Generating Allure Report ==="
+          
+          # Generate report with history
           allure generate allure-results --clean -o allure-report
           
-          echo "Allure report generated successfully with test results and history"
+          echo "✅ Allure report generated"
           
-          # Verify history was included
+          # Verify history inclusion
           if [ -d "allure-report/history" ]; then
-            echo "History successfully included in new report"
-            ls -la allure-report/history/
+            HISTORY_FILES=$(ls -1 allure-report/history/ | wc -l | tr -d ' ')
+            echo "✅ History included: $HISTORY_FILES files"
           else
-            echo "No history in generated report (this is normal for first run)"
+            echo "ℹ️  No history in report (first run)"
           fi
+          
+          # Display report size
+          REPORT_SIZE=$(du -sh allure-report/ | cut -f1)
+          echo "Report size: $REPORT_SIZE"
 
-      - name: Upload Allure report artifacts
+      - name: Upload Allure report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-report-${{ github.run_id }}
           path: allure-report/
-          retention-days: 30
+          retention-days: ${{ env.REPORT_ARTIFACT_RETENTION_DAYS }}
 
-      - name: Deploy Allure report to GitHub Pages
+      - name: Deploy to GitHub Pages
         if: always() && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -757,17 +1028,84 @@ jobs:
           publish_dir: ./allure-report
           destination_dir: ios
           keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy Allure report for run #${{ github.run_number }}'
 
-  # Stage 4: Cleanup
+      - name: Report publishing status
+        if: always()
+        run: |
+          echo "=== Report Publishing Summary ==="
+          
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/ios/"
+            echo "✅ Report published to GitHub Pages"
+            echo "🔗 URL: $REPORT_URL"
+          else
+            echo "ℹ️  Report not published (not main branch)"
+            echo "   Download artifact to view report locally"
+          fi
+
+  # =============================================================================
+  # Stage 4: Cleanup and Summary
+  # =============================================================================
   cleanup:
+    name: Cleanup & Summary
     runs-on: macos-14
     needs: [build, test, publish-allure-report]
     if: always()
+    timeout-minutes: 5
+    permissions:
+      contents: read
     
     steps:
-      - name: Clean workspace
+      - name: Cleanup workspace
         run: |
-          echo "Cleaning up Detox Demo Project workspace..."
-          # Clean up any temporary files
-          rm -rf /tmp/detox* || true
-          echo "Cleanup completed"
+          echo "=== Cleaning Up Workspace ==="
+          
+          # Remove temporary Detox files
+          rm -rf /tmp/detox* 2>/dev/null || true
+          
+          # Kill any orphaned processes
+          pkill -f "react-native.*start" 2>/dev/null || true
+          pkill -f "Metro" 2>/dev/null || true
+          
+          echo "✅ Workspace cleaned"
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          echo "=== Workflow Execution Summary ===" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Build status
+          if [ "${{ needs.build.outputs.build-success }}" = "success" ]; then
+            echo "✅ **Build:** Success" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Test status
+          if [ "${{ needs.test.outputs.test-outcome }}" = "success" ]; then
+            echo "✅ **Tests:** Passed" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test.outputs.test-outcome }}" = "failure" ]; then
+            echo "❌ **Tests:** Failed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Tests:** ${{ needs.test.outputs.test-outcome }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Report status
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/ios/"
+            echo "📊 **Report:** [View Allure Report]($REPORT_URL)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "📊 **Report:** Available in artifacts" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Device: ${{ github.event.inputs.device || 'iPhone 16 Pro' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- iOS Version: ${{ github.event.inputs.os_version || '18.2' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Test Suite: ${{ github.event.inputs.test_suite || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Run: #${{ github.run_number }} (Attempt ${{ github.run_attempt }})" >> $GITHUB_STEP_SUMMARY

@@ -182,6 +182,10 @@ jobs:
           # List available simulators for debugging
           echo "Available iOS simulators:"
           xcrun simctl list devices available | grep "iPhone"
+
+          # List available os for debugging
+          echo "Available iOS versions:"
+          xcrun simctl list runtimes
           
           # Build the iOS app without Metro (React Native handles bundling)
           echo "Building iOS app with embedded JS bundle..."

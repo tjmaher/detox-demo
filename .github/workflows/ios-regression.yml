@@ -206,7 +206,8 @@ validate-inputs:
   # =============================================================================
   # Stage 1: Build iOS Application
   # =============================================================================
-  build:
+  
+build:
     name: Build iOS App
     runs-on: macos-14
     needs: validate-inputs
@@ -424,7 +425,7 @@ validate-inputs:
   # =============================================================================
   # Stage 2: Run E2E Tests
   # =============================================================================
-  test:
+test:
     name: Run E2E Tests
     runs-on: macos-14
     needs: build
@@ -776,7 +777,7 @@ validate-inputs:
   # =============================================================================
   # Stage 3: Generate and Publish Allure Report
   # =============================================================================
-  publish-allure-report:
+publish-allure-report:
     name: Publish Test Report
     runs-on: macos-14
     needs: [build, test]
@@ -1066,7 +1067,7 @@ validate-inputs:
   # =============================================================================
   # Stage 4: Cleanup and Summary
   # =============================================================================
-  cleanup:
+cleanup:
     name: Cleanup & Summary
     runs-on: macos-14
     needs: [build, test, publish-allure-report]

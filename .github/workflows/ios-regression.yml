@@ -308,7 +308,7 @@ jobs:
           # Install via Homebrew
           brew tap wix/brew
           brew install applesimutils
-          
+          brew link applesimutils
           echo "✅ Applesimutils installed"
           applesimutils --version
 

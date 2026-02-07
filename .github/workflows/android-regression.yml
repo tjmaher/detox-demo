@@ -1,28 +1,53 @@
 name: "Build & Test Android"
 
-# Define default artifact capture settings for entire workflow
+# Permissions scoped per job for security
+permissions: {}
+
+# Global configuration constants
 env:
+  # Application Configuration
+  APP_NAME: 'DetoxDemo'
+  
+  # Timeouts (in seconds)
+  METRO_STARTUP_TIMEOUT: 60
+  METRO_HEALTHCHECK_TIMEOUT: 120
+  BUNDLE_GENERATION_TIMEOUT: 180
+  EMULATOR_BOOT_TIMEOUT: 300
+  
+  # Artifact Retention
+  BUILD_ARTIFACT_RETENTION_DAYS: 1
+  TEST_ARTIFACT_RETENTION_DAYS: 7
+  REPORT_ARTIFACT_RETENTION_DAYS: 30
+  
+  # Default Test Artifact Capture Settings
   DEFAULT_LOG_LEVEL: 'info'
   DEFAULT_CAPTURE_LOGS: 'failing'
   DEFAULT_CAPTURE_SCREENSHOTS: 'all'
   DEFAULT_CAPTURE_VIDEO: 'failing'
-  DEFAULT_RECORD_PERFORMANCE: 'none'
+  
+  # Node/Metro Configuration
+  NODE_VERSION: '20'
+  METRO_PORT: 8081
+  
+  # Android Configuration
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
 
 on:
-  # Run all tests when changes are pushed onto the main branch
-
+  # Run all tests when changes are pushed to main branch
   push:
     branches: [ main ]
-
-  # Run all tests before being merged to main, when branches are opened or synchronized
-
+  
+  # Run all tests on PRs targeting main
   pull_request:
     branches: [ main ]
 
-  # Run all tests every day at 10:00 PM EST
+  # Nightly automated test runs at 10:00 PM EST (3:00 AM UTC)
+  # Uncomment to enable scheduled runs
   # schedule:
-  #  - cron: '0 3 * * *'  # 10:00 PM EST = 3:00 AM UTC
-
+  #   - cron: '0 3 * * *'
+  
+  # Manual workflow trigger with full configuration options
   workflow_dispatch:
     inputs:
       test_suite:
@@ -34,6 +59,7 @@ on:
           - 'all'
           - 'login.test.ts'
           - 'securearea.test.ts'
+      
       avd_name:
         description: 'Select Android Virtual Device to run tests on'
         required: true
@@ -42,6 +68,7 @@ on:
         options:
           - 'Pixel_5_API_33'
           - 'Pixel_8_API_33'
+      
       log_level:
         description: 'Log levels - most to least verbose'
         required: true
@@ -56,8 +83,7 @@ on:
           - 'error'
           - 'fatal'
       
-      # Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)
-
+      # Test Artifact Capture Controls
       capture_logs:
         description: 'Capture test logs?'
         required: true
@@ -67,15 +93,17 @@ on:
           - 'failing'
           - 'all'
           - 'none'
+      
       capture_screenshots:
         description: 'Capture screenshots?'
         required: true
         type: choice
         default: 'all'
         options:
-          - 'failing'
           - 'all'
+          - 'failing'
           - 'none'
+      
       capture_video:
         description: 'Capture video?'
         required: true
@@ -86,99 +114,293 @@ on:
           - 'failing'
           - 'all'
 
-# Note: Detox Instruments performance is iOS only, therefore this option is only in the GitHub Actions workflow
-#  for workflows/ios-regression.yml and not workflows/android-regression.yml
-
 jobs:
-  build:
+  # =============================================================================
+  # Stage 0: Input Validation
+  # =============================================================================
+  validate-inputs:
+    name: Validate Workflow Inputs
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Validate inputs
+        run: |
+          echo "=== Validating Workflow Inputs ==="
+          
+          # Sanitize AVD name (remove any potentially dangerous characters)
+          AVD_RAW="${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}"
+          AVD_SAFE=$(echo "$AVD_RAW" | tr -cd '[:alnum:]_')
+          if [ "$AVD_RAW" != "$AVD_SAFE" ]; then
+            echo "⚠️  AVD name contains invalid characters"
+            echo "   Original: $AVD_RAW"
+            echo "   Sanitized: $AVD_SAFE"
+          fi
+          
+          # Sanitize test suite name
+          TEST_SUITE_RAW="${{ github.event.inputs.test_suite || 'all' }}"
+          TEST_SUITE_SAFE=$(echo "$TEST_SUITE_RAW" | tr -cd '[:alnum:].-')
+          if [ "$TEST_SUITE_RAW" != "$TEST_SUITE_SAFE" ]; then
+            echo "⚠️  Test suite name contains invalid characters"
+            echo "   Original: $TEST_SUITE_RAW"
+            echo "   Sanitized: $TEST_SUITE_SAFE"
+          fi
+          
+          # Validate log level
+          LOG_LEVEL="${{ github.event.inputs.log_level || 'info' }}"
+          VALID_LEVELS="trace debug verbose info warn error fatal"
+          if ! echo "$VALID_LEVELS" | grep -qw "$LOG_LEVEL"; then
+            echo "❌ ERROR: Invalid log level: $LOG_LEVEL"
+            echo "   Valid options: $VALID_LEVELS"
+            exit 1
+          fi
+          
+          echo "✅ All inputs validated successfully"
+          echo "   AVD: $AVD_SAFE"
+          echo "   Test Suite: $TEST_SUITE_SAFE"
+          echo "   Log Level: $LOG_LEVEL"
+
+  # =============================================================================
+  # Stage 1: Build Android Application
+  # =============================================================================
+  build:
+    name: Build Android App
+    runs-on: ubuntu-latest
+    needs: validate-inputs
+    if: always() && needs.validate-inputs.result == 'success'
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    
+    outputs:
+      build-success: ${{ steps.build-app.outcome }}
+      build-path: ${{ steps.build-app.outputs.build_path }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
 
-      - name: Install dependencies
-        run: yarn install
+      - name: Install JavaScript dependencies
+        run: |
+          echo "=== Installing JavaScript Dependencies ==="
+          # Remove any conflicting lock files
+          rm -f package-lock.json
+          
+          # Install with frozen lockfile for reproducibility
+          yarn install --frozen-lockfile
+          
+          echo "✅ JavaScript dependencies installed"
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Verify Java installation
+        run: |
+          echo "=== Verifying Java Installation ==="
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+          echo "✅ Java configured"
 
       - name: Install Detox CLI
-        run: yarn global add detox-cli
+        run: |
+          echo "=== Installing Detox CLI ==="
+          yarn global add detox-cli
+          detox --version
+          echo "✅ Detox CLI installed"
+
+      - name: Setup Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Ensure gradlew is executable
-        run: chmod +x android/gradlew
+        run: |
+          echo "=== Setting Gradle Wrapper Permissions ==="
+          chmod +x android/gradlew
+          echo "✅ gradlew is executable"
 
       - name: Build Android app
-        run: yarn detox:build:android
+        id: build-app
+        run: |
+          echo "=== Building Android Application ==="
+          
+          AVD_NAME="${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}"
+          
+          echo "Build Configuration:"
+          echo "  App: ${{ env.APP_NAME }}"
+          echo "  AVD: $AVD_NAME"
+          echo "  Java Version: ${{ env.JAVA_VERSION }}"
+          echo ""
+          
+          # Build the Android app
+          yarn detox:build:android
+          
+          BUILD_EXIT_CODE=$?
+          
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "❌ Build failed with exit code $BUILD_EXIT_CODE"
+            exit $BUILD_EXIT_CODE
+          fi
+          
+          # Verify build output
+          BUILD_PATH="android/app/build/outputs/apk"
+          if [ ! -d "$BUILD_PATH" ]; then
+            echo "❌ ERROR: Build artifact not found at $BUILD_PATH"
+            exit 1
+          fi
+          
+          echo "✅ Build completed successfully"
+          echo "build_path=$BUILD_PATH" >> $GITHUB_OUTPUT
+          
+          # Display build artifact info
+          echo ""
+          echo "Build artifacts:"
+          find "$BUILD_PATH" -name "*.apk" -type f -exec ls -lh {} \;
+        env:
+          CI: true
+          NODE_ENV: development
 
-      - name: Upload Android build artifact
+      - name: Upload build artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
-          path: android/app/build/outputs/apk/
-          retention-days: 1
+          name: android-build-${{ github.run_id }}
+          path: |
+            android/app/build/outputs/apk/
+            node_modules/.bin/detox
+          retention-days: ${{ env.BUILD_ARTIFACT_RETENTION_DAYS }}
+          compression-level: 6
 
-
+  # =============================================================================
+  # Stage 2: Run E2E Tests
+  # =============================================================================
   test:
+    name: Run E2E Tests
     runs-on: ubuntu-latest
     needs: build
+    if: needs.build.outputs.build-success == 'success'
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    
+    outputs:
+      test-outcome: ${{ steps.run-tests.outcome }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Enable KVM group permissions
         run: |
+          echo "=== Configuring KVM Permissions ==="
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+          echo "✅ KVM permissions configured"
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'yarn'
 
-      - name: Install dependencies
-        run: yarn install
+      - name: Install JavaScript dependencies
+        run: |
+          echo "=== Installing JavaScript Dependencies ==="
+          rm -f package-lock.json
+          yarn install --frozen-lockfile
+          echo "✅ JavaScript dependencies installed"
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Install Detox CLI
-        run: yarn global add detox-cli
-
-      - name: Install system dependencies for Android testing
         run: |
+          echo "=== Installing Detox CLI ==="
+          yarn global add detox-cli
+          echo "✅ Detox CLI installed"
+
+      - name: Install system dependencies
+        run: |
+          echo "=== Installing System Dependencies ==="
           sudo apt-get update
           sudo apt-get install -y libpulse0 scrcpy
+          echo "✅ System dependencies installed"
 
-      - name: Ensure Android SDK platform-tools are in PATH
-        run: echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH  
+      - name: Ensure Android SDK tools in PATH
+        run: |
+          echo "=== Configuring Android SDK PATH ==="
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "✅ Android SDK configured"
 
-      - name: Download Android build artifact
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: android-build
+          name: android-build-${{ github.run_id }}
           path: android/app/build/outputs/apk/
 
+      - name: Verify build artifacts
+        run: |
+          echo "=== Verifying Build Artifacts ==="
+          
+          APK_PATH="android/app/build/outputs/apk"
+          
+          if [ ! -d "$APK_PATH" ]; then
+            echo "❌ ERROR: APK directory not found at $APK_PATH"
+            echo "Available files:"
+            ls -la android/app/build/outputs/ || echo "Build outputs directory not found"
+            exit 1
+          fi
+          
+          # Find APK files
+          APK_COUNT=$(find "$APK_PATH" -name "*.apk" -type f | wc -l)
+          
+          if [ "$APK_COUNT" -eq 0 ]; then
+            echo "❌ ERROR: No APK files found"
+            exit 1
+          fi
+          
+          echo "✅ Found $APK_COUNT APK file(s)"
+          echo ""
+          echo "APK details:"
+          find "$APK_PATH" -name "*.apk" -type f -exec ls -lh {} \;
+
       - name: Run Detox Tests on Android Emulator
+        id: run-tests
         uses: ReactiveCircus/android-emulator-runner@v2
         env:
-          LOG_LEVEL: ${{ github.event.inputs.log_level || 'info' }}
-          CAPTURE_LOGS: ${{ github.event.inputs.capture_logs || 'failing' }}
-          CAPTURE_SCREENSHOTS: ${{ github.event.inputs.capture_screenshots || 'all' }}
-          CAPTURE_VIDEO: ${{ github.event.inputs.capture_video || 'failing' }}
+          LOG_LEVEL: ${{ github.event.inputs.log_level || env.DEFAULT_LOG_LEVEL }}
+          CAPTURE_LOGS: ${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}
+          CAPTURE_SCREENSHOTS: ${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}
+          CAPTURE_VIDEO: ${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}
           TEST_SUITE: ${{ github.event.inputs.test_suite || 'all' }}
+          DETOX_ENABLE_ALLURE: 'true'
+          DETOX_CONFIGURATION: android.emu.debug
+          CI: true
+          RCT_METRO_PORT: ${{ env.METRO_PORT }}
         with:
           avd-name: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}
           api-level: 33
@@ -187,38 +409,501 @@ jobs:
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
-            mkdir -p artifacts
-            echo "Starting Metro bundler..."
+            echo "=== Running Detox E2E Tests on Android ==="
+            
+            # Create artifact directories
+            mkdir -p allure-results artifacts
+            
+            echo ""
+            echo "Test Configuration:"
+            echo "  AVD: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}"
+            echo "  Test Suite: $TEST_SUITE"
+            echo "  Log Level: $LOG_LEVEL"
+            echo "  Capture Logs: $CAPTURE_LOGS"
+            echo "  Capture Screenshots: $CAPTURE_SCREENSHOTS"
+            echo "  Capture Video: $CAPTURE_VIDEO"
+            echo ""
+            
+            # Start Metro bundler
+            echo "=== Starting Metro Bundler ==="
             nohup yarn start --reset-cache > metro.log 2>&1 &
             METRO_PID=$!
-            sleep 15
+            echo "Metro PID: $METRO_PID"
+            
+            # Wait for Metro to start
             echo "Waiting for Metro to be ready..."
-            for i in {1..60}; do if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then echo "Metro is ready!"; break; fi; echo "Waiting for Metro... attempt $i/60"; sleep 2; done
-            echo "Pre-generating initial JavaScript bundle..."
-            curl -s "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false" > /dev/null || true
-            echo "Waiting for bundle generation to complete..."
+            METRO_READY=false
+            for i in {1..60}; do
+              if curl -sf --max-time 5 "http://localhost:${{ env.METRO_PORT }}/status" | grep -q "packager-status:running"; then
+                echo "✅ Metro is ready!"
+                METRO_READY=true
+                break
+              fi
+              echo "Waiting for Metro... attempt $i/60"
+              sleep 2
+            done
+            
+            if [ "$METRO_READY" = false ]; then
+              echo "❌ ERROR: Metro failed to start"
+              echo "Metro log:"
+              cat metro.log
+              exit 1
+            fi
+            
+            # Pre-generate JavaScript bundle
+            echo ""
+            echo "=== Pre-generating JavaScript Bundle ==="
+            if curl -sf --max-time ${{ env.BUNDLE_GENERATION_TIMEOUT }} \
+              "http://localhost:${{ env.METRO_PORT }}/index.bundle?platform=android&dev=true&minify=false" \
+              -o /tmp/bundle.js; then
+              
+              BUNDLE_SIZE=$(wc -c < /tmp/bundle.js | tr -d ' ')
+              BUNDLE_SIZE_MB=$(echo "scale=2; $BUNDLE_SIZE / 1048576" | bc)
+              echo "✅ Bundle generated successfully (${BUNDLE_SIZE_MB}MB)"
+              rm /tmp/bundle.js
+            else
+              echo "⚠️  Bundle generation warning, continuing anyway..."
+            fi
+            
+            # Wait for bundle to be fully cached
             sleep 20
-            echo "Verifying bundle availability..."
-            if curl -s "http://localhost:8081/index.bundle?platform=android&dev=true&minify=false" | head -c 1000 | grep -q "sourceMappingURL"; then echo "Bundle is ready!"; else echo "Bundle may not be fully ready, but continuing..."; fi
-            adb reverse tcp:8081 tcp:8081
-            echo "Test configuration: Log=$LOG_LEVEL, Logs=$CAPTURE_LOGS, Screenshots=$CAPTURE_SCREENSHOTS, Video=$CAPTURE_VIDEO, Suite=$TEST_SUITE"
-            if [ "$TEST_SUITE" = "all" ]; then yarn detox:test:android --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; else yarn detox test "e2e/$TEST_SUITE" --configuration android.emu.debug --loglevel "$LOG_LEVEL" --artifacts-location artifacts --record-logs "$CAPTURE_LOGS" --take-screenshots "$CAPTURE_SCREENSHOTS" --record-videos "$CAPTURE_VIDEO"; fi
-            echo "Tests complete, Metro will be cleaned up by emulator shutdown"
+            
+            # Verify bundle availability
+            echo "Verifying bundle cache..."
+            if curl -sf --max-time 10 \
+              "http://localhost:${{ env.METRO_PORT }}/index.bundle?platform=android&dev=true&minify=false" \
+              | head -c 1000 | grep -q "sourceMappingURL"; then
+              echo "✅ Bundle is cached and ready"
+            else
+              echo "⚠️  Bundle verification warning, tests may be slower"
+            fi
+            
+            # Configure ADB reverse proxy
+            echo ""
+            echo "=== Configuring ADB Reverse Proxy ==="
+            adb reverse tcp:${{ env.METRO_PORT }} tcp:${{ env.METRO_PORT }}
+            echo "✅ ADB reverse proxy configured"
+            
+            # Run Detox tests
+            echo ""
+            echo "=== Running Detox Tests ==="
+            
+            # Build detox command
+            DETOX_CMD="yarn detox test"
+            
+            # Add test suite if specified
+            if [ "$TEST_SUITE" != "all" ]; then
+              DETOX_CMD="$DETOX_CMD e2e/$TEST_SUITE"
+            fi
+            
+            # Add configuration and options
+            DETOX_CMD="$DETOX_CMD \
+              --configuration android.emu.debug \
+              --loglevel $LOG_LEVEL \
+              --artifacts-location artifacts \
+              --record-logs $CAPTURE_LOGS \
+              --take-screenshots $CAPTURE_SCREENSHOTS \
+              --record-videos $CAPTURE_VIDEO"
+            
+            echo "Running command: $DETOX_CMD"
+            echo ""
+            
+            # Run tests and capture exit code
+            set +e
+            eval $DETOX_CMD
+            TEST_EXIT_CODE=$?
+            set -e
+            
+            # Report results
+            echo ""
+            echo "=== Test Execution Complete ==="
+            
+            if [ $TEST_EXIT_CODE -eq 0 ]; then
+              echo "✅ All tests passed"
+            else
+              echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
+            fi
+            
+            # Verify test results
+            if [ -d "allure-results" ] && [ -n "$(ls -A allure-results/*.json 2>/dev/null)" ]; then
+              RESULT_COUNT=$(find allure-results -name "*.json" -type f | wc -l | tr -d ' ')
+              echo "Generated $RESULT_COUNT Allure result files"
+            else
+              echo "⚠️  No Allure results generated"
+            fi
+            
+            # Stop Metro
+            echo ""
+            echo "=== Stopping Metro Bundler ==="
+            kill $METRO_PID 2>/dev/null || true
+            echo "✅ Metro bundler stopped"
+            
+            exit $TEST_EXIT_CODE
 
-      - name: Upload Detox artifacts
+      - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: detox-artifacts
-          path: artifacts/
+          name: detox-test-results-${{ github.run_id }}
+          path: |
+            artifacts/
+            allure-results/
+          retention-days: ${{ env.TEST_ARTIFACT_RETENTION_DAYS }}
+          if-no-files-found: warn
 
-  cleanup:
+  # =============================================================================
+  # Stage 3: Generate and Publish Allure Report
+  # =============================================================================
+  publish-allure-report:
+    name: Publish Test Report
     runs-on: ubuntu-latest
     needs: [build, test]
-    if: always()
+    if: always() && needs.build.outputs.build-success == 'success'
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    
     steps:
-      - name: Clean workspace
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: detox-test-results-${{ github.run_id }}
+          path: .
+        continue-on-error: true
+
+      - name: Verify test artifacts
+        id: verify-artifacts
         run: |
-          echo "Cleaning up Detox Demo Project workspace..."
-          rm -rf /tmp/detox* || true
-          echo "Cleanup completed"
+          echo "=== Verifying Test Artifacts ==="
+          
+          HAS_RESULTS=false
+          
+          if [ -d "allure-results" ] && [ -n "$(ls -A allure-results/*.json 2>/dev/null)" ]; then
+            RESULT_COUNT=$(find allure-results -name "*.json" -type f | wc -l | tr -d ' ')
+            echo "✅ Found $RESULT_COUNT Allure result files"
+            HAS_RESULTS=true
+          else
+            echo "⚠️  No Allure results found"
+            echo "Creating minimal result set for empty report..."
+            mkdir -p allure-results
+          fi
+          
+          echo "has_results=$HAS_RESULTS" >> $GITHUB_OUTPUT
+          
+          if [ -d "artifacts" ]; then
+            echo "✅ Found artifacts directory"
+            ARTIFACT_SIZE=$(du -sh artifacts/ 2>/dev/null | cut -f1 || echo '0')
+            echo "   Total size: $ARTIFACT_SIZE"
+          else
+            echo "ℹ️  No artifacts directory (expected if tests passed with 'failing' capture mode)"
+          fi
+
+      - name: Checkout GitHub Pages for history
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages-history
+
+      - name: Copy Allure history
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "=== Copying Allure History ==="
+          
+          if [ -d "gh-pages-history/android/history" ]; then
+            mkdir -p allure-results/history
+            cp -r gh-pages-history/android/history/* allure-results/history/
+            
+            HISTORY_FILES=$(ls -1 allure-results/history/ | wc -l | tr -d ' ')
+            echo "✅ Copied $HISTORY_FILES history files"
+          else
+            echo "ℹ️  No previous history found (first run)"
+          fi
+
+      - name: Install Allure
+        run: |
+          echo "=== Installing Allure ==="
+          
+          # Install Java for Allure
+          sudo apt-get update
+          sudo apt-get install -y openjdk-17-jre-headless
+          
+          # Download and install Allure
+          ALLURE_VERSION="2.24.1"
+          wget -q https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz
+          tar -zxf allure-${ALLURE_VERSION}.tgz
+          sudo mv allure-${ALLURE_VERSION} /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
+          
+          allure --version
+          echo "✅ Allure installed"
+
+      - name: Attach Detox artifacts to Allure
+        if: always()
+        run: |
+          echo "=== Attaching Artifacts to Allure Report ==="
+          
+          if [ ! -d "artifacts" ]; then
+            echo "ℹ️  No artifacts to attach"
+            exit 0
+          fi
+          
+          mkdir -p allure-results/attachments
+          
+          FOUND_ANY=false
+          
+          # Attach screenshots
+          if find artifacts -name "*.png" -type f 2>/dev/null | grep -q .; then
+            echo "📸 Attaching screenshots..."
+            find artifacts -name "*.png" -type f -exec cp {} allure-results/attachments/ \;
+            COUNT=$(find allure-results/attachments -name "*.png" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT screenshots"
+            FOUND_ANY=true
+          fi
+          
+          # Attach videos
+          if find artifacts -name "*.mp4" -type f 2>/dev/null | grep -q .; then
+            echo "🎥 Attaching videos..."
+            find artifacts -name "*.mp4" -type f -exec cp {} allure-results/attachments/ \;
+            COUNT=$(find allure-results/attachments -name "*.mp4" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT videos"
+            FOUND_ANY=true
+          fi
+          
+          # Attach logs
+          if find artifacts -name "*.log" -type f 2>/dev/null | grep -q .; then
+            echo "📋 Attaching logs..."
+            find artifacts -name "*.log" -type f -exec cp {} allure-results/attachments/ \;
+            COUNT=$(find allure-results/attachments -name "*.log" -type f 2>/dev/null | wc -l | tr -d ' ')
+            echo "   ✅ Attached $COUNT log files"
+            FOUND_ANY=true
+          fi
+          
+          if [ "$FOUND_ANY" = false ]; then
+            echo "ℹ️  No artifacts captured (normal when tests pass with 'failing' mode)"
+          else
+            TOTAL_SIZE=$(du -sh allure-results/attachments/ 2>/dev/null | cut -f1 || echo '0')
+            echo "Total attachments size: $TOTAL_SIZE"
+          fi
+
+      - name: Generate Allure metadata
+        if: always()
+        run: |
+          echo "=== Generating Allure Metadata ==="
+          
+          mkdir -p allure-results
+          
+          # Executor information
+          cat > allure-results/executor.json << EOF
+          {
+            "name": "GitHub Actions",
+            "type": "github",
+            "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "buildOrder": ${{ github.run_number }},
+            "buildName": "Android Detox Tests #${{ github.run_number }}",
+            "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "reportUrl": "https://tjmaher.github.io/detox-demo/android/",
+            "reportName": "Allure Report"
+          }
+          EOF
+          
+          # Environment properties
+          # Sanitize commit message for properties file
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n 1 | tr '\n' ' ' | sed 's/[^a-zA-Z0-9 ._-]/_/g')
+          
+          cat > allure-results/environment.properties << EOF
+          # Test Environment
+          Platform=Android
+          Device=${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}
+          Android.API.Level=33
+          Test.Suite=${{ github.event.inputs.test_suite || 'all' }}
+          
+          # Framework Versions
+          Node.Version=$(node --version)
+          Yarn.Version=$(yarn --version)
+          Java.Version=${{ env.JAVA_VERSION }}
+          Detox.Version=$(yarn list --pattern detox --depth=0 2>/dev/null | grep detox@ | sed 's/.*detox@//' || echo 'unknown')
+          React.Native.Version=$(node -p "require('./package.json').dependencies['react-native']" 2>/dev/null || echo 'unknown')
+          
+          # Test Configuration
+          Log.Level=${{ github.event.inputs.log_level || env.DEFAULT_LOG_LEVEL }}
+          Capture.Logs=${{ github.event.inputs.capture_logs || env.DEFAULT_CAPTURE_LOGS }}
+          Capture.Screenshots=${{ github.event.inputs.capture_screenshots || env.DEFAULT_CAPTURE_SCREENSHOTS }}
+          Capture.Video=${{ github.event.inputs.capture_video || env.DEFAULT_CAPTURE_VIDEO }}
+          
+          # CI/CD Information
+          Branch=${{ github.ref_name }}
+          Commit.SHA=${{ github.sha }}
+          Commit.Author=${{ github.actor }}
+          Commit.Message=$COMMIT_MSG
+          Repository=${{ github.repository }}
+          Workflow.Run.ID=${{ github.run_id }}
+          Workflow.Run.Number=${{ github.run_number }}
+          Workflow.Attempt=${{ github.run_attempt }}
+          Trigger=${{ github.event_name }}
+          Run.Date=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+          
+          # Test categories for better failure classification
+          cat > allure-results/categories.json << 'EOF'
+          [
+            {
+              "name": "Login & Authentication Failures",
+              "matchedStatuses": ["failed"],
+              "messageRegex": ".*login.*|.*auth.*|.*credential.*"
+            },
+            {
+              "name": "Timeout Issues",
+              "matchedStatuses": ["failed", "broken"],
+              "messageRegex": ".*timeout.*|.*timed out.*"
+            },
+            {
+              "name": "Element Not Found",
+              "matchedStatuses": ["failed"],
+              "messageRegex": ".*not found.*|.*unable to find.*|.*does not exist.*"
+            },
+            {
+              "name": "Network & API Failures",
+              "matchedStatuses": ["failed", "broken"],
+              "messageRegex": ".*network.*|.*api.*|.*request.*|.*response.*"
+            },
+            {
+              "name": "Infrastructure Issues",
+              "matchedStatuses": ["broken"],
+              "messageRegex": ".*emulator.*|.*build.*|.*metro.*|.*bundler.*|.*avd.*"
+            },
+            {
+              "name": "Test Framework Issues",
+              "matchedStatuses": ["broken"],
+              "messageRegex": ".*detox.*|.*jest.*|.*test.*setup.*"
+            }
+          ]
+          EOF
+          
+          echo "✅ Metadata generated"
+
+      - name: Generate Allure report
+        run: |
+          echo "=== Generating Allure Report ==="
+          
+          # Generate report with history
+          allure generate allure-results --clean -o allure-report
+          
+          echo "✅ Allure report generated"
+          
+          # Verify history inclusion
+          if [ -d "allure-report/history" ]; then
+            HISTORY_FILES=$(ls -1 allure-report/history/ | wc -l | tr -d ' ')
+            echo "✅ History included: $HISTORY_FILES files"
+          else
+            echo "ℹ️  No history in report (first run)"
+          fi
+          
+          # Display report size
+          REPORT_SIZE=$(du -sh allure-report/ | cut -f1)
+          echo "Report size: $REPORT_SIZE"
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.run_id }}
+          path: allure-report/
+          retention-days: ${{ env.REPORT_ARTIFACT_RETENTION_DAYS }}
+
+      - name: Deploy to GitHub Pages
+        if: always() && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: android
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy Allure report for run #${{ github.run_number }}'
+
+      - name: Report publishing status
+        if: always()
+        run: |
+          echo "=== Report Publishing Summary ==="
+          
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            REPORT_URL="https://tjmaher.github.io/detox-demo/android/"
+            echo "✅ Report published to GitHub Pages"
+            echo "🔗 URL: $REPORT_URL"
+          else
+            echo "ℹ️  Report not published (not main branch)"
+            echo "   Download artifact to view report locally"
+          fi
+
+  # =============================================================================
+  # Stage 4: Cleanup and Summary
+  # =============================================================================
+  cleanup:
+    name: Cleanup & Summary
+    runs-on: ubuntu-latest
+    needs: [build, test, publish-allure-report]
+    if: always()
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Cleanup workspace
+        run: |
+          echo "=== Cleaning Up Workspace ==="
+          
+          # Remove temporary Detox files
+          rm -rf /tmp/detox* 2>/dev/null || true
+          
+          # Kill any orphaned processes
+          pkill -f "react-native.*start" 2>/dev/null || true
+          pkill -f "Metro" 2>/dev/null || true
+          
+          echo "✅ Workspace cleaned"
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          echo "=== Workflow Execution Summary ===" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Build status
+          if [ "${{ needs.build.outputs.build-success }}" = "success" ]; then
+            echo "✅ **Build:** Success" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build:** Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Test status
+          if [ "${{ needs.test.outputs.test-outcome }}" = "success" ]; then
+            echo "✅ **Tests:** Passed" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test.outputs.test-outcome }}" = "failure" ]; then
+            echo "❌ **Tests:** Failed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Tests:** ${{ needs.test.outputs.test-outcome }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Report status
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            REPORT_URL="https://tjmaher.github.io/detox-demo/android/"
+            echo "📊 **Report:** [View Allure Report]($REPORT_URL)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "📊 **Report:** Available in artifacts" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
+          echo "- AVD: ${{ github.event.inputs.avd_name || 'Pixel_5_API_33' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Android API Level: 33" >> $GITHUB_STEP_SUMMARY
+          echo "- Test Suite: ${{ github.event.inputs.test_suite || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Run: #${{ github.run_number }} (Attempt ${{ github.run_attempt }})" >> $GITHUB_STEP_SUMMARY

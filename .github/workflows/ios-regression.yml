@@ -140,10 +140,27 @@ on:
           - 'all'
 
 jobs:
+    # Simple build step for iOS app before Detox tests
+    build-simple:
+      name: Build iOS App (Simple)
+      runs-on: macos-14
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+        - name: Build iOS app
+          run: |
+            cd ios
+            xcodebuild \
+              -workspace DetoxDemo.xcworkspace \
+              -scheme DetoxDemo \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -derivedDataPath build
   # =============================================================================
   # Stage 0: Input Validation
   # =============================================================================
-  validate-inputs:
+  
+validate-inputs:
     name: Validate Workflow Inputs
     runs-on: ubuntu-latest
     timeout-minutes: 2

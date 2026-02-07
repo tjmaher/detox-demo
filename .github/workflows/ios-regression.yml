@@ -202,6 +202,8 @@ jobs:
           # Build the iOS app without Metro (React Native handles bundling)
           echo "Building iOS app with embedded JS bundle..."
           cd ios
+          DEVICE_NAME="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
           xcodebuild \
             -workspace DetoxDemo.xcworkspace \
             -scheme DetoxDemo \
@@ -210,7 +212,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             ONLY_ACTIVE_ARCH=YES \
-            -destination "platform=iOS Simulator,name=${{ github.event.inputs.device }},OS=${{ github.event.inputs.os_version }}"
+            -destination "platform=iOS Simulator,name=$DEVICE_NAME,OS=$OS_VERSION"
           
           cd ..
           

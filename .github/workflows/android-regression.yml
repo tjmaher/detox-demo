@@ -253,7 +253,7 @@ jobs:
           echo ""
           
           # Build the Android app
-          yarn detox build --configuration android.emu.release
+          yarn detox build --configuration android.emu.debug
           
           BUILD_EXIT_CODE=$?
           

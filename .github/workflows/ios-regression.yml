@@ -76,6 +76,8 @@ on:
           - 'warn'
           - 'error'
           - 'fatal'
+
+# Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)          
           
       capture_logs:
         description: 'Capture test logs?'
@@ -113,6 +115,8 @@ on:
           - 'none'
           - 'all'
       
+# Note: Detox Instruments performance is iOS only, therefore this option is only in the GitHub Actions workflow
+#  for workflows/ios-regression.yml and not workflows/android-regression.yml
 
 jobs:
   # =============================================================================
@@ -195,13 +199,13 @@ jobs:
           echo "Selected Xcode: $(xcode-select -p)"
           xcodebuild -version
 
-      - name: Setup Homebrew
+      - name: Set up Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
           echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
           eval "$(/opt/homebrew/bin/brew shellenv)"
 
-      - name: Setup Ruby
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
@@ -218,7 +222,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-homebrew-gems-
 
-      - name: Setup Node.js for React Native & Detox
+      - name: Set up Node.js for React Native & Detox
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -323,7 +327,7 @@ jobs:
           echo "Available iOS simulators:"
           xcrun simctl list devices available | head -50
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -586,7 +590,7 @@ jobs:
             echo "ℹ️  No previous history found, this will be the first report"
           fi
 
-      - name: Setup Allure
+      - name: Set up Allure
         run: |
           eval "$(/opt/homebrew/bin/brew shellenv)"
           brew install allure

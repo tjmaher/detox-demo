@@ -195,7 +195,7 @@ jobs:
     name: Build iOS App
     runs-on: macos-14
     needs: validate-inputs
-    if: always() && needs.validate-inputs.result == 'success'
+    if: success() && needs.validate-inputs.result == 'success'
     timeout-minutes: 30
     permissions:
       contents: read

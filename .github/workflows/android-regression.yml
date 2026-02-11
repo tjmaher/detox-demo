@@ -340,13 +340,6 @@ jobs:
           yarn global add detox-cli
           echo "✅ Detox CLI installed"
 
-      - name: Install system dependencies
-        run: |
-          echo "=== Installing System Dependencies ==="
-          sudo apt-get update
-          sudo apt-get install -y libpulse0 scrcpy
-          echo "✅ System dependencies installed"
-
       - name: Ensure Android SDK tools in PATH
         run: |
           echo "=== Configuring Android SDK PATH ==="

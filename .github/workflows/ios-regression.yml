@@ -73,10 +73,17 @@ on:
           - 'iPad Pro (12.9-inch) (6th generation)'
       
       os_version:
-        description: 'iOS version to use'
+        description: 'Select iOS version to run tests on'
         required: true
-        type: string
+        type: choice
         default: '18.2'
+        options:
+          - '17.0.1'
+          - '17.2'
+          - '17.4'
+          - '17.5'
+          - '18.1'
+          - '18.2'
       
       logger_level:
         description: 'Log levels - most to least verbose'
@@ -86,9 +93,11 @@ on:
         options:
           - 'trace'
           - 'debug'
+          - 'verbose'
           - 'info'
           - 'warn'
           - 'error'
+          - 'fatal'
           
       capture_logs:
         description: 'Capture test logs?'

@@ -78,6 +78,18 @@ on:
         type: string
         default: '18.2'
       
+      logger_level:
+        description: 'Log levels - most to least verbose'
+        required: true
+        type: choice
+        default: 'info'
+        options:
+          - 'trace'
+          - 'debug'
+          - 'info'
+          - 'warn'
+          - 'error'
+          
       capture_logs:
         description: 'Capture test logs?'
         required: true
@@ -117,17 +129,6 @@ on:
           - 'none'
           - 'all'
       
-      logger_level:
-        description: 'Detox logger level'
-        required: true
-        type: choice
-        default: 'info'
-        options:
-          - 'trace'
-          - 'debug'
-          - 'info'
-          - 'warn'
-          - 'error'
 
 jobs:
   # =============================================================================

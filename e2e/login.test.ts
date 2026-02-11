@@ -1,7 +1,7 @@
 import { device } from 'detox';
 import loginPage from './pages/login-page';
 import secureAreaPage from './pages/secure-area-page';
-import { validUser, invalidUser } from './credentials';
+import credentials from './data/credentials.json';
 import BasePage from './pages/base-page';
 
 describe('Login Flow: ', () => {
@@ -31,12 +31,12 @@ describe('Login Flow: ', () => {
   });
 
   it('Invalid credentials displays error message inside an error banner', async () => {
-    await loginPage.loginAs(invalidUser.userName, invalidUser.password);
+    await loginPage.loginAs(credentials.invalidUser.userName, credentials.invalidUser.password);
     await loginPage.verifyErrorMessage();
   });
 
   it('Successful login to Secure Area displays success message', async () => {
-    await loginPage.loginAs(validUser.userName, validUser.password);
+    await loginPage.loginAs(credentials.validUser.userName, credentials.validUser.password);
     await secureAreaPage.waitToLoad();
     await secureAreaPage.verifySuccessBanner();
   });

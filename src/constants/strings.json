@@ -1,0 +1,20 @@
+{
+  "secureAreaScreen": {
+    "successMessage": "You logged into a secure area!",
+    "heading": "Secure Area",
+    "bodyText": "Welcome to the Secure Area. When you are done click logout below.",
+    "logoutButton": "Logout"
+  },
+  "loginScreen": {
+    "logoutSuccess": "You logged out of the secure area!",
+    "loginSuccess": "Login successful!",
+    "loginError": "Your username is invalid!",
+    "heading": "Login Page",
+    "instructions": "This is where you can log into the secure area. Enter tomsmith for the username and SuperSecretPassword! for the password. If the information is wrong you should see error messages.",
+    "usernamePlaceholder": "Username",
+    "passwordPlaceholder": "Password",
+    "loginButton": "Login",
+    "attribution": "Based on Dave Haefner's ",
+    "link": "The-Internet"
+  }
+}

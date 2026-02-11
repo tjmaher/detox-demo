@@ -1,6 +1,7 @@
 import { expect, element, by, waitFor } from 'detox';
 import BasePage from './base-page';
 import { TEN_SECONDS } from '../constants';
+import messages from '../data/messages.json';
 
 class LoginPage extends BasePage {
   private readonly heading = by.text('Login Page');
@@ -13,11 +14,10 @@ class LoginPage extends BasePage {
   private readonly successLogoutTextElement = by.id('success-logout-text');
   private readonly successBanner = by.id('success-banner');
 
-  // Normally messages would be stored in a separate file, but included here for simplicities sake
-  private static readonly headingText = 'Login Page';
-  private static readonly infoText = 'This is where you can log into the secure area. Enter tomsmith for the username and SuperSecretPassword! for the password. If the information is wrong you should see error messages';
-  private static readonly errorText = 'Your username is invalid!';
-  private static readonly logoutSuccessText = 'You logged out of the secure area!';
+  private static readonly headingText = messages.loginPage.heading;
+  private static readonly infoText = messages.loginPage.bodyText;
+  private static readonly errorText = messages.loginPage.invalidUsernameMessagePrefix;
+  private static readonly logoutSuccessText = messages.loginPage.logoutSuccessMessage;
 
   async waitToLoad() {
     this.log('\nLoginPage: Verifying Page is Loaded');

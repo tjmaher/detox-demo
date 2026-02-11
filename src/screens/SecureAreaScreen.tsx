@@ -2,6 +2,7 @@
  * Created by GitHub Copilot
  */
 import React, { useState } from 'react';
+import strings from '../constants/strings.json';
 import {
   View,
   Text,
@@ -16,7 +17,7 @@ interface SecureAreaScreenProps {
 }
 
 const SecureAreaScreen: React.FC<SecureAreaScreenProps> = ({ onLogout }) => {
-  const [successMessage] = useState('You logged into a secure area!');
+  const [successMessage] = useState(strings.secureAreaScreen.successMessage);
 
   const handleLogout = () => {
     onLogout();
@@ -29,7 +30,6 @@ const SecureAreaScreen: React.FC<SecureAreaScreenProps> = ({ onLogout }) => {
       testID="scrollView"
     >
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
       {/* Success Banner */}
       <View style={styles.successBanner} testID="success-banner">
         <Text testID="success-text" style={styles.bannerText}>{successMessage}</Text>
@@ -37,19 +37,17 @@ const SecureAreaScreen: React.FC<SecureAreaScreenProps> = ({ onLogout }) => {
 
       <View style={styles.formContainer}>
         <Text style={styles.heading} testID="secure-area-heading">
-          Secure Area
+          {strings.secureAreaScreen.heading}
         </Text>
-        
         <Text style={styles.bodyText} testID="secure-area-body">
-          Welcome to the Secure Area. When you are done click logout below.
+          {strings.secureAreaScreen.bodyText}
         </Text>
-
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
           testID="logout-button"
         >
-          <Text style={styles.logoutButtonText}>Logout</Text>
+          <Text style={styles.logoutButtonText}>{strings.secureAreaScreen.logoutButton}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -19,6 +19,12 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+android {
+    defaultConfig {
+        applicationId "com.detoxdemo"
+    }
+}
 allprojects {
     repositories {
         google()

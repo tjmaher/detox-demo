@@ -101,8 +101,31 @@ jobs:
         with:
           node-version: '20.x'
 
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
+
+      - name: Verify React Native setup
+        run: |
+          echo "=== Verifying React Native CLI installation ==="
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Yarn version: $(yarn --version)"
+          echo ""
+          echo "Checking for @react-native-community/cli..."
+          if ! yarn list --pattern @react-native-community/cli --depth=0; then
+            echo "❌ ERROR: React Native CLI not found in node_modules"
+            echo "This usually means yarn.lock is out of sync with package.json"
+            exit 1
+          fi
+          echo ""
+          echo "Testing npx react-native commands..."
+          npx react-native --version
+          echo ""
+          echo "Testing react-native config..."
+          npx react-native config
+          echo ""
+          echo "✅ React Native CLI is working correctly"
 
       - name: Verify React Native setup
         run: |

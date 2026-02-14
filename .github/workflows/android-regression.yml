@@ -116,6 +116,10 @@ jobs:
           if ! yarn list --pattern @react-native-community/cli --depth=0; then
             echo "❌ ERROR: React Native CLI not found in node_modules"
             echo "This usually means yarn.lock is out of sync with package.json"
+            echo "--- package.json ---"
+            cat package.json || echo "(package.json missing)"
+            echo "--- yarn.lock (first 100 lines) ---"
+            head -n 100 yarn.lock || echo "(yarn.lock missing)"
             exit 1
           fi
           echo ""
@@ -127,11 +131,6 @@ jobs:
           echo ""
           echo "✅ React Native CLI is working correctly"
 
-      - name: Verify React Native setup
-        run: |
-          echo "Checking React Native CLI..."
-          npx react-native --version || (echo "Installing RN CLI..." && yarn add -D @react-native-community/cli)
-          npx react-native config || echo "Config check failed but continuing..."
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -142,6 +141,10 @@ jobs:
       - name: Install Detox CLI
         run: yarn global add detox-cli
 
+
+
+      - name: Remove generated build artifacts
+        run: rm -rf android/app/build/generated
 
       - name: Clean Android build artifacts
         run: cd android && ./gradlew clean && cd ..

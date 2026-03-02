@@ -223,6 +223,10 @@ Read more about the journey in T.J.'s LinkedIn article: [First Time Using GitHub
 ```
 detox-demo/
 ├── src/
+│   ├── components/
+│   │   └── AppIcon.tsx           # Reusable app icon component
+│   ├── constants/
+│   │   └── strings.json          # Centralized UI text strings and messages
 │   └── screens/
 │       ├── LoginScreen.tsx       # Login Page emulating The-Internet
 │       └── SecureAreaScreen.tsx  # Secure Area reached after successful login

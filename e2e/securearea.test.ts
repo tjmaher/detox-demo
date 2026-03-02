@@ -1,7 +1,7 @@
 import { device } from 'detox';
 import loginPage from './pages/login-page';
 import secureAreaPage from './pages/secure-area-page';
-import { validUser } from './credentials';
+import credentials from './data/credentials.json';
 import BasePage from './pages/base-page';
 
 describe('Secure Area Flow: ', () => {
@@ -21,7 +21,7 @@ describe('Secure Area Flow: ', () => {
     
     // Login to access secure area
     await loginPage.waitToLoad();
-    await loginPage.loginAs(validUser.userName, validUser.password);
+    await loginPage.loginAs(credentials.validUser.userName, credentials.validUser.password);
     await secureAreaPage.waitToLoad();
   });
 

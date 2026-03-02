@@ -2,6 +2,7 @@
  * Created by GitHub Copilot
  */
 import React, { useState } from 'react';
+import strings from '../constants/strings.json';
 import {
   View,
   Text,
@@ -11,7 +12,10 @@ import {
   StatusBar,
   ScrollView,
 } from 'react-native';
-import { validUser } from '../../e2e/credentials';
+// Do not import test credentials in UI code. Use a placeholder for production.
+const TEST_CREDENTIALS = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development'
+  ? require('../../e2e/data/credentials.json').validUser
+  : { userName: '', password: '' };
 
 interface LoginScreenProps {
   onNavigateToSecureArea: () => void;
@@ -28,13 +32,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (username === validUser.userName && password === validUser.password) {
-      setSuccessMessage('Login successful!');
+    if (username === TEST_CREDENTIALS.userName && password === TEST_CREDENTIALS.password) {
+      setSuccessMessage(strings.loginScreen.loginSuccess);
       setTimeout(() => {
         onNavigateToSecureArea();
       }, 1000);
     } else {
-      setErrorMessage('Your username is invalid!');
+      setErrorMessage(strings.loginScreen.loginError);
     }
   };
 
@@ -54,7 +58,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
       {/* Logout Success Banner */}
       {showLogoutMessage ? (
         <View style={styles.successBanner} testID="success-banner">
-          <Text testID="success-logout-text" style={styles.bannerText}>You logged out of the secure area!</Text>
+          <Text testID="success-logout-text" style={styles.bannerText}>{strings.loginScreen.logoutSuccess}</Text>
         </View>
       ) : null}
 
@@ -74,16 +78,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
 
       <View style={styles.formContainer}>
         <Text style={styles.heading} testID="login-heading">
-          Login Page
+          {strings.loginScreen.heading}
         </Text>
-        
         <Text style={styles.instructions} testID="login-instructions">
-          This is where you can log into the secure area. Enter tomsmith for the username and SuperSecretPassword! for the password. If the information is wrong you should see error messages
+          {strings.loginScreen.instructions}
         </Text>
-
         <TextInput
           style={styles.input}
-          placeholder="Username"
+          placeholder={strings.loginScreen.usernamePlaceholder}
           value={username}
           onChangeText={(text) => {
             setUsername(text);
@@ -93,10 +95,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
           autoCapitalize="none"
           autoCorrect={false}
         />
-
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder={strings.loginScreen.passwordPlaceholder}
           value={password}
           onChangeText={(text) => {
             setPassword(text);
@@ -107,20 +108,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigateToSecureArea, showL
           autoCapitalize="none"
           autoCorrect={false}
         />
-
         <TouchableOpacity
           style={styles.loginButton}
           onPress={handleLogin}
           testID="login-button"
         >
-          <Text style={styles.loginButtonText}>Login</Text>
+          <Text style={styles.loginButtonText}>{strings.loginScreen.loginButton}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Attribution text */}
       <Text style={styles.attribution}>
-        Based on Dave Haefner's{' '}
-        <Text style={styles.link}>The-Internet</Text>
+        {strings.loginScreen.attribution}
+        <Text style={styles.link}>{strings.loginScreen.link}</Text>
       </Text>
     </ScrollView>
   );

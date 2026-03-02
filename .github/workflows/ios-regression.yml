@@ -76,7 +76,9 @@ on:
           - 'warn'
           - 'error'
           - 'fatal'
-      # Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)
+
+# Artifacts - Control what test artifacts are captured (https://wix.github.io/Detox/docs/config/artifacts/)          
+          
       capture_logs:
         description: 'Capture test logs?'
         required: true
@@ -112,11 +114,69 @@ on:
         options:
           - 'none'
           - 'all'
+      
+# Note: Detox Instruments performance is iOS only, therefore this option is only in the GitHub Actions workflow
+#  for workflows/ios-regression.yml and not workflows/android-regression.yml
 
 jobs:
-  # Setup and Build
+  # =============================================================================
+  # Stage 0: Input Validation
+  # =============================================================================
+  
+  validate-inputs:
+    name: Validate Inputs
+    runs-on: macos-14
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Validate and sanitize inputs
+        run: |
+          echo "=== Validating Workflow Inputs ==="
+          
+          # Validate iOS version format (must be X.Y or X.Y.Z)
+          OS_VERSION="${{ github.event.inputs.os_version || '18.2' }}"
+          if ! echo "$OS_VERSION" | grep -qE '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+            echo "❌ ERROR: Invalid iOS version format: $OS_VERSION"
+            echo "   Expected format: X.Y or X.Y.Z (e.g., 18.2 or 18.2.1)"
+            exit 1
+          fi
+          
+          # Sanitize device name (remove any potentially dangerous characters)
+          DEVICE_RAW="${{ github.event.inputs.device || 'iPhone 16 Pro' }}"
+          DEVICE_SAFE=$(echo "$DEVICE_RAW" | tr -cd '[:alnum:] ().-')
+          if [ "$DEVICE_RAW" != "$DEVICE_SAFE" ]; then
+            echo "⚠️  Device name contains invalid characters"
+            echo "   Original: $DEVICE_RAW"
+            echo "   Sanitized: $DEVICE_SAFE"
+          fi
+          
+          # Sanitize test suite name
+          TEST_SUITE_RAW="${{ github.event.inputs.test_suite || 'all' }}"
+          TEST_SUITE_SAFE=$(echo "$TEST_SUITE_RAW" | tr -cd '[:alnum:].-')
+          if [ "$TEST_SUITE_RAW" != "$TEST_SUITE_SAFE" ]; then
+            echo "⚠️  Test suite name contains invalid characters"
+            echo "   Original: $TEST_SUITE_RAW"
+            echo "   Sanitized: $TEST_SUITE_SAFE"
+          fi
+          
+          echo "✅ All inputs validated successfully"
+          echo "   Device: $DEVICE_SAFE"
+          echo "   iOS Version: $OS_VERSION"
+          echo "   Test Suite: $TEST_SUITE_SAFE"
+
+  # =============================================================================
+  # Stage 1: Build iOS Application
+  # =============================================================================
+  
   build:
     runs-on: macos-14
+    needs: validate-inputs
+    if: success() && needs.validate-inputs.result == 'success'
+    timeout-minutes: 30
+    permissions:
+      contents: read
     outputs:
       build-success: ${{ steps.build-app.outcome }}
     
@@ -139,13 +199,13 @@ jobs:
           echo "Selected Xcode: $(xcode-select -p)"
           xcodebuild -version
 
-      - name: Setup Homebrew
+      - name: Set up Homebrew
         run: |
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
           echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
           eval "$(/opt/homebrew/bin/brew shellenv)"
 
-      - name: Setup Ruby
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
@@ -162,7 +222,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-homebrew-gems-
 
-      - name: Setup Node.js for React Native & Detox
+      - name: Set up Node.js for React Native & Detox
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -185,6 +245,9 @@ jobs:
           eval "$(/opt/homebrew/bin/brew shellenv)"
           brew tap wix/brew
           brew install applesimutils
+          brew link applesimutils
+          echo "✅ Applesimutils installed"
+          applesimutils --version
 
       - name: Build Detox for iOS
         id: build-app
@@ -231,7 +294,10 @@ jobs:
             node_modules/.bin/detox
           retention-days: 1
 
-  # Stage 2: Run Tests, if build succeeds
+  # =============================================================================
+  # Stage 2: Run E2E Tests
+  # =============================================================================
+  
   test:
     runs-on: macos-14
     needs: build
@@ -261,7 +327,7 @@ jobs:
           echo "Available iOS simulators:"
           xcrun simctl list devices available | head -50
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -453,19 +519,10 @@ jobs:
             allure-results/
           retention-days: 7
 
-      - name: Check test results
-        if: always()
-        run: |
-          if [ "${{ steps.run-tests.outcome }}" == "failure" ]; then
-            echo "❌ Tests failed! Check the test output above for details."
-            exit 1
-          elif [ "${{ steps.run-tests.outcome }}" == "success" ]; then
-            echo "✅ All tests passed!"
-          else
-            echo "⚠️ Test outcome: ${{ steps.run-tests.outcome }}"
-          fi
-
-  # Stage 3: Generate Allure Reports, only if tests complete
+  # =============================================================================
+  # Stage 3: Generate and Publish Allure Report
+  # =============================================================================
+  
   publish-allure-report:
     runs-on: macos-14
     needs: [build, test]
@@ -533,7 +590,7 @@ jobs:
             echo "ℹ️  No previous history found, this will be the first report"
           fi
 
-      - name: Setup Allure
+      - name: Set up Allure
         run: |
           eval "$(/opt/homebrew/bin/brew shellenv)"
           brew install allure
@@ -758,7 +815,24 @@ jobs:
           destination_dir: ios
           keep_files: true
 
-  # Stage 4: Cleanup
+      - name: Report publishing status
+        if: always()
+        run: |
+          echo "=== Report Publishing Summary ==="
+          
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/ios/"
+            echo "✅ Report published to GitHub Pages"
+            echo "🔗 URL: $REPORT_URL"
+          else
+            echo "ℹ️  Report not published (not main branch)"
+            echo "   Download artifact to view report locally"
+          fi
+
+  # =============================================================================
+  # Stage 4: Cleanup and Summary
+  # =============================================================================
+  
   cleanup:
     runs-on: macos-14
     needs: [build, test, publish-allure-report]

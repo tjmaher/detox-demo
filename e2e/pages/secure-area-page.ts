@@ -1,6 +1,7 @@
 import { element, by, waitFor } from 'detox';
 import BasePage from './base-page';
 import { TEN_SECONDS } from '../constants';
+import messages from '../data/messages.json';
 
 class SecureAreaPage extends BasePage {
   private readonly heading = by.id('secure-area-heading');
@@ -9,9 +10,9 @@ class SecureAreaPage extends BasePage {
   private readonly successBanner = by.id('success-banner');
   private readonly successTextElement = by.id('success-text');
 
-  private static readonly headingText = 'Secure Area';
-  private static readonly successLoginText = 'You logged into a secure area!';
-  private static readonly secureAreaInstructionText = 'Welcome to the Secure Area. When you are done click logout below.';
+  private static readonly headingText = messages.secureArea.heading;
+  private static readonly successLoginText = messages.secureArea.successfulLoginMessagePrefix;
+  private static readonly secureAreaInstructionText = messages.secureArea.bodyText;
 
   async waitToLoad() {
     this.log('\nSecureArea: Verifying Page is Loaded');

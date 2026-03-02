@@ -10,6 +10,9 @@ DetoxDemo is a working React Native demo app running on both the iPhone and Andr
 * For iOS: [Allure Reports](https://tjmaher.github.io/detox-demo/ios/) configured to show historical data
 * For [iOS](https://github.com/tjmaher/detox-demo/actions/workflows/ios-regression.yml) and [Android](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/android-regression.yml) emulators, CI/CD that triggers tests to run after every pull request is submitted, provided by GitHub Action Workflows 
 * A security scanning workflow ([security.yml](https://github.com/tjmaher/detox-demo/blob/main/.github/workflows/security.yml)) that uses [Snyk](https://snyk.io) to scan for vulnerabilities in dependencies and code. Yes, the username (tomsmith) and password (SuperSecretPassword!) are in plain text in our [e2e/credentials](https://github.com/tjmaher/detox-demo/blob/main/e2e/credentials.ts) file, but only because this is a demo project. 
+* All test credentials and user-facing messages are managed in the `e2e/data` folder:
+  * `e2e/data/credentials.json` — Stores all test credentials (e.g., username and password) used by E2E tests and page objects.
+  * `e2e/data/messages.json` — Centralizes all user-facing UI strings and test messages for maintainability and DRY code.
 * A working React Native mobile app for iOS and Android [complete with source code](https://github.com/tjmaher/detox-demo/tree/main/src)
 * A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
 * Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
@@ -225,12 +228,14 @@ detox-demo/
 │       └── SecureAreaScreen.tsx  # Secure Area reached after successful login
 │
 ├── e2e/                          # Detox end-to-end testing framework
+│   ├── data/                     # Centralized test data and messages
+│   │   ├── credentials.json      # Test credentials (username, password)
+│   │   └── messages.json         # All user-facing UI/test messages
 │   ├── pages/                    # Page Objects
 │   │   ├── base-page.ts          # Base page object with common methods
 │   │   ├── login-page.ts         # Login screen page object
 │   │   └── secure-area-page.ts   # Secure area page object
 │   ├── constants.ts              # Time constants (TEN_SECONDS, FIVE_SECONDS, etc.)
-│   ├── credentials.ts            # Test credentials (tomsmith/SuperSecretPassword!)
 │   ├── init.ts                   # Detox initialization and setup
 │   ├── jest.config.js            # Jest configuration for Detox tests with Allure integration
 │   ├── login.test.ts             # Login functionality test suite

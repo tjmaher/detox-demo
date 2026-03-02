@@ -1,0 +1,14 @@
+{
+  "baseUrl": "https://the-internet.herokuapp.com",
+    "loginPage": {
+    "heading": "Login Page",
+    "bodyText": "This is where you can log into the secure area. Enter tomsmith for the username and SuperSecretPassword! for the password. If the information is wrong you should see error messages.",
+    "invalidUsernameMessagePrefix": "Your username is invalid!",
+    "logoutSuccessMessage": "You logged out of the secure area!"
+  },
+  "secureArea": {
+    "heading": "Secure Area",
+    "bodyText": "Welcome to the Secure Area. When you are done click logout below.",
+    "successfulLoginMessagePrefix": "You logged into a secure area!"
+  }
+}

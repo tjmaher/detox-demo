@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.84.0",
-    "react": "19.2.4",
-    "react-native": "^0.84.0",
+    "react": "19.2.3",
+    "react-native": "0.84.0",
     "react-native-safe-area-context": "^5.5.2"
   },
   "devDependencies": {
@@ -32,7 +32,8 @@
     "@react-native/babel-preset": "0.84.0",
     "@react-native/eslint-config": "0.84.0",
     "@react-native/metro-config": "0.84.0",
-    "@react-native/typescript-config": "0.84.0",
+    "@react-native/typescript-config": "^0.84.0",
+    "@testing-library/react-native": "^12.1.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.0",
@@ -45,7 +46,7 @@
     "jest": "^30.0.4",
     "jest-allure2-reporter": "^2.3.0",
     "prettier": "3.8.1",
-    "react-test-renderer": "19.2.4",
+    "react-test-renderer": "19.2.3",
     "sharp": "^0.34.5",
     "typescript": "^5.8.3"
   },

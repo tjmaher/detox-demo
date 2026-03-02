@@ -1,11 +1,17 @@
+
 plugins {
     id 'com.android.application'
     id 'com.facebook.react'
+    id 'kotlin-android'
 }
 
 react {
     autolinkLibrariesWithApp()
 }
+
+project.ext.react = [
+    enableHermes: true
+]
 
 android {
     namespace "com.detoxdemo"
@@ -47,12 +53,10 @@ android {
 
 dependencies {
     implementation("com.facebook.react:react-android")
+    implementation("com.facebook.react:hermes-android")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     
     // Detox dependencies
     androidTestImplementation('com.wix:detox:+')
 }
-
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-applyNativeModulesAppBuildGradle(project)

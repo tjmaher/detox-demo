@@ -1,5 +1,6 @@
 # Detox Demo - React Native iOS + Android App
 
+This project was created for the April 6th, 2026 TestGuild.com talk "Building a React Native Mobile Test Automation Framework Using Detox + TypeScript" ( [See Slides](https://www.slideshare.net/slideshow/building-a-react-mobile-automated-test-framework-using-detox-typescript/286364655) )
 DetoxDemo is a working React Native demo app running on both the iPhone and Android mobile devices that gives examples of:
 * [Mobile automation tests](https://github.com/tjmaher/detox-demo/blob/main/e2e/login.test.ts) written in Detox + TypeScript 
 * Commonly used test code refactored into [Page Objects](https://github.com/tjmaher/detox-demo/tree/main/e2e/pages)

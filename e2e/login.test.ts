@@ -35,7 +35,7 @@ describe('Login Flow: ', () => {
     await loginPage.verifyErrorMessage();
   });
 
-  it('Successful login to Secure Area displays success message', async () => {
+  it('Successful login to Secure Area displays success message - @smoke', async () => {
     await loginPage.loginAs(credentials.validUser.userName, credentials.validUser.password);
     await secureAreaPage.waitToLoad();
     await secureAreaPage.verifySuccessBanner();

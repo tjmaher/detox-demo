@@ -19,6 +19,35 @@ DetoxDemo is a working React Native demo app running on both the iPhone and Andr
 * A detailed README documenting the Project Structure, and all the setup for the tools and technologies of this project, along with listing various historical tidbits. 
 * Scalable Vector Graphic (SVG) showing the DetoxDemo [iPhone desktop icon](https://github.com/tjmaher/detox-demo/tree/main/assets) and a [setup script](https://github.com/tjmaher/detox-demo/tree/main/scripts) generating various sizes of icons
 
+## Test Tagging and Smoke Tests
+
+The project supports test tagging to run specific subsets of tests:
+
+### Smoke Tests
+Key tests are tagged with `@smoke` in their names for quick validation:
+
+```typescript
+it('Successful login to Secure Area displays success message - @smoke', async () => {
+    await loginPage.loginAs(credentials.validUser.userName, credentials.validUser.password);
+    await secureAreaPage.waitToLoad();
+    await secureAreaPage.verifySuccessBanner();
+  });
+
+```
+To run the smoke test, shortcuts have been set up by T.J. in package.json:
+
+```bash
+# Run smoke tests on Android
+yarn smoke:android
+
+yarn smoke:ios
+```
+
+### Test Organization
+- Tests can be tagged using `@tagname` in test descriptions
+- Use `--testNamePattern="@tagname"` to filter tests
+- Multiple tags can be used if you set them up, as in this hypothetical example: `--testNamePattern="@smoke|@critical"`
+
 ## Screenshots of LoginPage and SecureArea screens
 
 <div align="center">

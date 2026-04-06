@@ -14,7 +14,9 @@
     "detox:ios": "yarn run detox:build:ios && yarn run detox:test:ios",
     "detox:build:android": "detox build --configuration android.emu.debug",
     "detox:test:android": "detox test --configuration android.emu.debug",
-    "detox:android": "yarn run detox:build:android && yarn run detox:test:android"
+    "detox:android": "yarn run detox:build:android && yarn run detox:test:android",
+    "smoke:android": "detox test --configuration android.emu.debug --testNamePattern=\"@smoke\"",
+    "smoke:ios": "detox test --configuration ios.sim.debug --testNamePattern=\"@smoke\""
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.84.0",

@@ -1,6 +1,8 @@
 # Detox Demo - React Native iOS + Android App
 
-This project was created for the TestGuild.com talk "**Building a React Native Mobile Test Automation Framework Using Detox + TypeScript**" ( [See Slides](https://www.slideshare.net/slideshow/building-a-react-mobile-automated-test-framework-using-detox-typescript/286364655) ) Given on April 6th, 2026. 
+This project was initially created for the TestGuild.com talk "**Building a React Native Mobile Test Automation Framework Using Detox + TypeScript**" ( [See Slides](https://tinyurl.com/detox-demo-slides) ) given on April 6, 2026.
+
+The author, T.J. Maher, an SDET with 10+ years of experience is currently #OpenToWork. Follow him on [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social) and see other samples of his work on his [blog](https://www.tjmaher.com/p/programming-projects.html)!
 
 DetoxDemo is a working React Native demo app running on both the iPhone and Android mobile devices that gives examples of:
 * [Mobile automation tests](https://github.com/tjmaher/detox-demo/blob/main/e2e/login.test.ts) written in Detox + TypeScript 
@@ -93,7 +95,7 @@ Want to kick off a job to run all the Login tests in the CI/ CD platform using o
 
 ## About DetoxDemo
 
-T.J. Maher will be using DetoxDemo to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
+T.J. Maher used DetoxDemo to demonstrate to the [AutomationGuild](https://testguild.com/) in April 2026 how he has put together a mobile automated test framework for [SELF ID](https://selfid.com/) and their React Native mobile application.  
 
 The DetoxDemo app is based on Dave Haefner's [The - Internet / Login](http://the-internet.herokuapp.com/login), a site where T.J. first started teaching himself automation development, writing Selenium + Java tests against that website back in July 2015 with his first toy automation project "Testing The-Internet" ([See Blog](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html)). 
 
@@ -103,7 +105,7 @@ DetoxDemo, the app under test for this project, was constructed by GitHub Copilo
 
 ## About the Author
 
-T.J. has been a Software Test Engineer at [SELF ID](https://selfid.com/) since July 2025 testing the SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. 
+T.J. had been a Software Test Engineer at [SELF ID](https://selfid.com/) from July 2025 to January 2026 testing the SELF ID React Native mobile app ( [Download iOS app](https://apps.apple.com/us/app/self-id/id1663745416) ) where users can create, store, and share their digital identity. T.J. turned his research notes first into blog posts then a presentation. 
 
 T.J. Maher has been blogging about writing test automation for over ten years on his site, [Adventures in Automation](https://www.tjmaher.com/2015/06/simple-manipulation-of-login-page.html), writing [toy projects](https://www.tjmaher.com/p/programming-projects.html) to help him practice what he is doing on the job, and writing [articles](https://www.tjmaher.com/p/media.html) and [courses](https://testautomationu.applitools.com/capybara-ruby/) about test automation. Other coding projects can be found at https://github.com/tjmaher . T.J. is @tjmaher1 on [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social), [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [Twitter](https://x.com/tjmaher1).
 

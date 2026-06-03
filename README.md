@@ -2,7 +2,7 @@
 
 This project was initially created for the TestGuild.com talk "**Building a React Native Mobile Test Automation Framework Using Detox + TypeScript**" ( [See Slides](https://tinyurl.com/detox-demo-slides) ) given on April 6, 2026.
 
-The author, T.J. Maher, an SDET with 10+ years of experience, living on the South Shore of Massachusetts, is currently #OpenToWork. Any hiring managers have any remote positions? Follow him on [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social) and see other samples of his work on his [blog](https://www.tjmaher.com/p/programming-projects.html)!
+The author, T.J. Maher, an SDET with 10+ years of experience, living on the South Shore of Massachusetts. Follow him on [LinkedIn](https://www.linkedin.com/in/tjmaher1/), and [BlueSky](https://bsky.app/profile/tjmaher1.bsky.social) and see other samples of his work on his [blog](https://www.tjmaher.com/p/programming-projects.html)!
 
 T.J. gave a talk to the **Software Quality Group of New England** ([SQGNE.org](https://sqgne.org/)) on May 20, 2026 at 6:00 pm at the Scrum.org HQ in Burlington, MA. (See the slides at (https://tinyurl.com/detox-demo-sqgne))
 
